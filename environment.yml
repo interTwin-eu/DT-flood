@@ -1,0 +1,41 @@
+name: DT-flood
+
+channels:
+  - conda-forge
+  - numba
+
+dependencies:
+  - pip
+  - pip:
+    - NDBC
+    - noaa-coops
+    - cht-tide
+    - cht-meteo
+    - cht-observations
+    - git+https://github.com/Deltares/hydromt_fiat.git@env_fix
+    - git+https://github.com/Deltares/fiat_toolbox.git
+    - git+https://github.com/Deltares/hydromt_sfincs.git@storage_volume
+    - git+https://github.com/Deltares/Delft-FIAT.git
+    - git+https://github.com/Deltares/cht_cyclones.git
+  - black
+  - cartopy
+  - ipykernel
+  - typos
+  - ruff
+  - build
+  - geopandas
+  - hydromt=0.8.0
+  - mypy
+  - numpy
+  - pandas
+  - plotly
+  - pydantic=1.10.9
+  - pytest
+  - python=3.10
+  - tomli
+  - tomli-w
+  - twine
+  - census
+  - pre-commit
+  - numpy-financial
+  - pyogrio
