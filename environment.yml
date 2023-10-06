@@ -40,3 +40,4 @@ dependencies:
   - pre-commit
   - numpy-financial
   - pyogrio
+  - xarray-spatial
