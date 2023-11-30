@@ -18,6 +18,7 @@ dependencies:
     - git+https://github.com/Deltares/hydromt_sfincs.git@storage_volume
     - git+https://github.com/Deltares/Delft-FIAT.git
     - git+https://github.com/Deltares/cht_cyclones.git
+    - git+https://github.com/Deltares-research/FloodAdapt.git@env_fix
   - black
   - cartopy
   - ipykernel
@@ -25,6 +26,7 @@ dependencies:
   - ruff
   - build
   - geopandas
+  - geojson
   - hydromt=0.8.0
   - mypy
   - numpy
