@@ -36,7 +36,8 @@ A geojson for setting up a model domain in the Humber delta is provided.
 
 The Delft-FIAT as-is will use the JRC vulnerability curves, which are provided together with a data catalog for reading them in (the root in the data catalog does need updating).
 
-
+### Running scenarios
+To run a FloodAdapt scenario, the [SFINCS](https://github.com/Deltares/SFINCS) and [Delft-FIAT](https://deltares.github.io/Delft-FIAT/stable/) executables are necessary. Make sure they are installed in the folder DT-flood/system/[fiat,sfincs] so FloodAdapt knows where to find the executables.  
 
 # Template for interTwin repositories
 
