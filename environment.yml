@@ -6,6 +6,7 @@ channels:
 
 dependencies:
   - cartopy
+  - cwltool
   - ipykernel
   - geopandas
   - hydromt_wflow=0.3

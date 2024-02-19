@@ -28,4 +28,7 @@ def plot_wflow_model(wflow_model):
     dem.plot(ax=ax,**cmap_kwargs)
 
     resv_kwargs = dict(facecolor='blue', edgecolor='black', linewidth=1)
+    gauges_kwargs = dict(facecolor='red', shape='diamond', size=10)
+
     wflow_model.staticgeoms['reservoirs'].plot(ax=ax,**resv_kwargs)
+    wflow_model.staticgeoms['gauges_src'].plot(ax=ax, **gauges_kwargs)
