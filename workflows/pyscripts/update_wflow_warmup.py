@@ -37,7 +37,7 @@ opt = {
         "endtime": datetime.strftime(endtime, "%Y-%m-%dT%H:%M:%S"),
         "model.reinit": True,
         "state.path_output": "../../wflow/instate/instates.nc",
-        "input.path_static": "../../../../../../static/templates/wflow/staticmaps.nc",
+        "input.path_static": "./staticmaps.nc",
     },
     "setup_precip_forcing": {
         "precip_fn": "era5_daily",

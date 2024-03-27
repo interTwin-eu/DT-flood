@@ -10,7 +10,6 @@ inputs:
     data_catalog: File
     init_script: File
     wflow_update_script: File
-    wflow_run_script: File
     sfincs_update_script: File
     arrange_script: File
     fiat_update_script: File
@@ -38,7 +37,6 @@ steps:
             scenario: scenario
             data_catalog: data_catalog
             wflow_update_script: wflow_update_script
-            wflow_run_script: wflow_run_script
         out:
             [fa_database]
         run:

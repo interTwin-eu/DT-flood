@@ -7,6 +7,8 @@ requirements:
             - entry: $(inputs.sfincs_files)
               writable: true
 
+baseCommand: ["sfincs", "."]
+
 hints:
     DockerRequirement:
         dockerPull: deltares/sfincs-cpu:sfincs-v2.0.3-Cauberg

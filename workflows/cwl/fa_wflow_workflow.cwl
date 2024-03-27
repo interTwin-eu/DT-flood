@@ -6,7 +6,6 @@ inputs:
     scenario: string
     data_catalog: File
     wflow_update_script: File
-    wflow_run_script: File
 
 outputs:
     fa_database:
@@ -40,7 +39,6 @@ steps:
             ./update_wflow_warump.cwl
     run_wflow_warmup:
         in:
-            pyscript: wflow_run_script
             fa_database: setup_wflow_event/fa_database
             scenario: scenario
             mode:
@@ -51,7 +49,6 @@ steps:
             ./run_wflow.cwl
     run_wflow_event:
         in:
-            pyscript: wflow_run_script
             fa_database: run_wflow_warmup/fa_database
             scenario: scenario
             mode:
