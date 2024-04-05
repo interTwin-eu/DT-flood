@@ -5,14 +5,16 @@ channels:
   - numba
 
 dependencies:
-  - cartopy
-  - cwltool
-  - ipykernel
-  - geopandas
-  - hydromt_wflow=0.3
-  - python=3.10
   - pip
   - pip:
     - jupyter
     - git+https://github.com/Deltares-research/FloodAdapt.git
     - gwwapi
+    - cwltool
+  - cartopy
+  - cwltool
+  - ipykernel
+  - geopandas
+  - hydromt_wflow
+  - python<3.12
+
