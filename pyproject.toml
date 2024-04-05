@@ -1,0 +1,14 @@
+[build-system]
+requires = ["flit_core >=3.4.0,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "DT-flood"
+version = "0.1"
+requires-python = ">=3.10"
+authors = [
+    {name = "Willem Tromp", email = "willem.tromp@deltares.nl"},
+]
+description = "Digital Twin for flooding developed for the InterTwin project"
+readme = "README.md"
+license = {file = "LICENSE"}
