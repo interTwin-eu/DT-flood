@@ -1,6 +1,7 @@
 from pathlib import Path
 from sys import argv
-from flood_adapt.object_model.scenario import Scenario
+
+from DT_flood.utils.fa_scenario_utils import init_scenario
 
 
 def tree(directory):
@@ -12,10 +13,13 @@ def tree(directory):
 
 tree(Path(argv[1]))
 
-scenario_fn = Path(argv[1]) / "input" / "scenarios" / argv[2] / (argv[2]+".toml")
-scenario = Scenario.load_file(scenario_fn)
+# scenario_fn = Path(argv[1])  / (argv[2]+"_toplevel.toml")
 
-scenario.init_object_model()
+database, scenario = init_scenario(Path(argv[1]), (argv[2]+"_toplevel.toml"))
+
+scenario_obj = database.get_scenario(scenario['name'])
+
+scenario_obj.init_object_model()
 # print(f"Scenario database path: {scenario.database_input_path}")
 
 print("Downscaling and writing floodmap")

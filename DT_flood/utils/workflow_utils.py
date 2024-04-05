@@ -8,7 +8,7 @@ from typing import Union
 from flood_adapt.object_model.interface.database import IDatabase
 from flood_adapt.object_model.interface.scenarios import IScenario
 
-from fa_scenario_utils import init_scenario, create_scenario
+from .fa_scenario_utils import init_scenario, create_scenario
 
 
 def run_scenario(
@@ -30,7 +30,7 @@ def create_workflow_config(
         scenario: Union[str, IScenario],
         cwl_workflow: Union[str, os.PathLike] = None,
         script_folder: Union[str, os.PathLike] = None,
-        data_catalog: Union[str, os.PathLike] = Path("/home/wotromp/DestinE_workflows/deltares_data_wsl.yml")
+        # data_catalog: Union[str, os.PathLike] = Path("/home/wotromp/DestinE_workflows/deltares_data_wsl.yml")
 ) -> None:
     """Writes Config file for CWL workflow to FloodAdapt database
 
@@ -57,18 +57,18 @@ def create_workflow_config(
         database = database.input_path.parent
 
     if cwl_workflow is None:
-        cwl_workflow = database.parents[1]/"workflows"/"run_fa_scenario.cwl"
+        cwl_workflow = Path(__file__).parents[1]/"workflows"/"run_fa_scenario.cwl"
     else:
         assert Path(cwl_workflow).exists(), "Workflow file does not exist!"
 
     if script_folder is None:
-        script_folder = database.parents[1]/"workflows"/"pyscripts"
+        script_folder = Path(__file__).parents[1]/"workflows"/"pyscripts"
     else:
         assert Path(script_folder).exists(), "Script folder does not exist!"
 
 
     # Check inputs
-    assert Path(data_catalog).exists(), "Data catalog file does not exist!"
+    # assert Path(data_catalog).exists(), "Data catalog file does not exist!"
 
 
 
@@ -88,7 +88,7 @@ def create_workflow_config(
 
     cwl_config['scenario'] = scenario
     cwl_config["fa_database"]['path'] = str(database)
-    cwl_config["data_catalog"]['path'] = str(data_catalog)
+    # cwl_config["data_catalog"]['path'] = str(data_catalog)
 
     print(f"Write Config file {config_fn} to folder {database/config_fn}")
     with open(database/config_fn, 'w+') as f:
@@ -115,7 +115,7 @@ def run_fa_scenario_workflow(
     if type(scenario) is IScenario:
         scenario = scenario.attrs.name
 
-    workflow_fn = Path(database).parents[1]/"workflows"/"run_fa_scenario.cwl"
+    workflow_fn = Path(__file__).parents[1]/"workflows"/"run_fa_scenario.cwl"
     config_fn = database/f"cwl_config_{scenario}.yml"
     cmd_validate = f"cwltool --validate {str(workflow_fn)} {str(config_fn)}"
     print("Validating workflow")

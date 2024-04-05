@@ -1,20 +1,15 @@
 from pathlib import Path
 from sys import argv
 from os import makedirs
-import tomli
-from flood_adapt.object_model.scenario import Scenario
+from DT_flood.utils.fa_scenario_utils import init_scenario, create_scenario
 
-scenario_fn = Path(argv[1]) /(argv[2]+".toml")
+# scenario_fn = Path(argv[1]) /(argv[2]+"_toplevel.toml")
 
-with open(scenario_fn, 'rb') as f:
-    scenario = tomli.load(f)
+database, scenario = init_scenario(Path(argv[1]), (argv[2]+"_toplevel.toml"))
 
+new_scenario = create_scenario(database, scenario)
 
-scenario = Scenario.load_file(scenario_fn)
-
-
-
-scenario.init_object_model()
+new_scenario.init_object_model()
 
 if not scenario.results_path.exists():
     print(f"Creating output folder at {scenario.results_path}")
@@ -22,5 +17,5 @@ if not scenario.results_path.exists():
 else:
     print(f"Output folder already exists at {scenario.results_path}")
 
-print("Preparing SFINCS configuration")
-scenario.direct_impacts.hazard.preprocess_sfincs()
+# print("Preparing SFINCS configuration")
+# scenario.direct_impacts.hazard.preprocess_sfincs()
