@@ -59,7 +59,7 @@ def create_scenario_config(database: IDatabase, scenario_config: dict) -> IScena
         'projection': scenario_config['projection']['name'],
         'strategy': scenario_config['strategy']['name'], 
     }
-    return scenarios.create_scenario(attrs=scenario_dict, database=database)
+    return scenarios.create_scenario(attrs=scenario_dict)
 
 
 
@@ -85,15 +85,15 @@ def create_scenario(database: IDatabase, scenario_config: dict) -> IScenario:
     _ = create_strategy(database=database, scenario_config=scenario_config)
 
     # Load existing scenarios
-    scenarios_existing = scenarios.get_scenarios(database)
+    scenarios_existing = scenarios.get_scenarios()
 
     # If necessary create new scenario, save it and return object, otherwise load existing and return object
     if not scenario_config['name'] in scenarios_existing['name']:
         scenario_new = create_scenario_config(database, scenario_config)
-        scenarios.save_scenario(scenario_new, database)
+        scenarios.save_scenario(scenario_new)
         return scenario_new
     else:
-        return scenarios.get_scenario(scenario_config['name'], database)
+        return scenarios.get_scenario(scenario_config['name'])
 
 
 def create_event(database: IDatabase, scenario_config: dict) -> IEvent:
@@ -112,18 +112,18 @@ def create_event(database: IDatabase, scenario_config: dict) -> IEvent:
         FloodAdapt Event object
     """    
     # Load existing events
-    events_existing = events.get_events(database)
+    events_existing = events.get_events()
     # If necessary create new event, save it and return object, otherwise load existing and return object
     if not scenario_config["event"]["name"] in events_existing["name"]:
         event_new = create_event_config(database, scenario_config)
-        events.save_event_toml(event_new, database)
+        events.save_event_toml(event_new)
         if event_new.attrs.tide.timeseries_file == 'placeholder.csv':
             with open(database.input_path/'events'/event_new.attrs.name/'placeholder.csv','w') as f:
                 df = pd.DataFrame({'placeholder': [0]}, index=(['00:00:00']))
                 df.to_csv(f)
         return event_new
     else:
-        return events.get_event(scenario_config["event"]["name"], database)
+        return events.get_event(scenario_config["event"]["name"])
 
 def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
     """Create FloodAdapt Event object from scenario configuration
@@ -225,15 +225,15 @@ def create_projection(database: IDatabase, scenario_config: dict) -> IProjection
         FloodAdapt Projection object
     """    
     # Load existing projections
-    projections_existing = projections.get_projections(database)
+    projections_existing = projections.get_projections()
 
     # If necessary create new projection, save it and return object, otherwise load existing and return object
     if not scenario_config["projection"]["name"] in projections_existing["name"]:
         projection_new = create_projection_config(database, scenario_config)
-        projections.save_projection(projection_new, database)
+        projections.save_projection(projection_new)
         return projection_new
     else:
-        return projections.get_projection(scenario_config["projection"]["name"], database)
+        return projections.get_projection(scenario_config["projection"]["name"])
 
 def create_projection_config(database: IDatabase, scenario_config: dict) -> IProjection:
     """Create FloodAdapt Projection object from scenario configuration
@@ -294,14 +294,14 @@ def create_strategy(database: IDatabase, scenario_config: dict) -> IStrategy:
         FloodAdapt Strategy object
     """    
     # Load existing strategies
-    strategies_existing = strategies.get_strategies(database)
+    strategies_existing = strategies.get_strategies()
 
     # If necessary create new strategy, save it and return object, otherwise load existing and return object
     if not scenario_config["strategy"]["name"] in strategies_existing['name']:
         strategy_new = create_strategy_config(database, scenario_config)
-        strategies.save_strategy(strategy_new, database)
+        strategies.save_strategy(strategy_new)
         return strategy_new
-    else: return strategies.get_strategy(scenario_config["strategy"]["name"], database)
+    else: return strategies.get_strategy(scenario_config["strategy"]["name"])
 
 def create_strategy_config(database: IDatabase, scenario_config: dict) -> IStrategy:
     """Create FloodAdapt Strategy object from scenario configuration. Where necessary create new measures, otherwise use existing ones
@@ -351,5 +351,5 @@ def create_strategy_config(database: IDatabase, scenario_config: dict) -> IStrat
             measures.save_measure(measure_new, database)
 
     scenario_dict.update({'measures': measure_list})
-    return strategies.create_strategy(attrs=scenario_dict, database=database)
+    return strategies.create_strategy(attrs=scenario_dict)
 

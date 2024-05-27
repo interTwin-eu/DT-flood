@@ -11,7 +11,6 @@ from flood_adapt.object_model.scenario import Scenario
 
 fa_database_fn = Path(argv[1])
 scenario_fn = fa_database_fn / (argv[2]+"_toplevel.toml")
-# data_catalog_fn = Path(argv[3])
 mode = argv[3]
                        
 print(f"Configuring WFlow event run for FloodAdapt Database {fa_database_fn.stem} with scenario {argv[2]}")

@@ -12,3 +12,6 @@ authors = [
 description = "Digital Twin for flooding developed for the InterTwin project"
 readme = "README.md"
 license = {file = "LICENSE"}
+dependencies = [
+    "hydromt_fiat @ git+https://github.com/Deltares/hydromt_fiat.git@hotfixes",
+]
