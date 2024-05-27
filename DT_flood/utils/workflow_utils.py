@@ -124,7 +124,7 @@ def run_fa_scenario_workflow(
     assert result.returncode == 0, "CWL Validation Error, exit workflow execution"
 
 
-    cmd_run = f"cwltool --outdir {str(database.parent)} {str(workflow_fn)} {str(config_fn)}"
+    cmd_run = f"cwltool --outdir {str(database.parent)} --preserve-entire-environment {str(workflow_fn)} {str(config_fn)}"
     print("Executing workflow")
     print(f"Running {cmd_run}")
     subprocess.run(cmd_run, shell=True)

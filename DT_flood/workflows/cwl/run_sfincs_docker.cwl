@@ -9,7 +9,7 @@ requirements:
 
 hints:
     DockerRequirement:
-        dockerPull: deltares/sfincs-cpu:sfincs-v2.0.3-Cauberg
+        dockerPull: deltares/sfincs-cpu:sfincs-v2.0.5
 
 inputs:
     sfincs_files:

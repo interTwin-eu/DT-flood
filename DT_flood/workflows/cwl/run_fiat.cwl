@@ -5,10 +5,6 @@ baseCommand: ["python"]
 
 requirements:
     InlineJavascriptRequirement: {}
-    EnvVarRequirement:
-        envDef:
-            GDAL_DATA: /home/wotromp/mambaforge/envs/DT-flood/share/gdal
-            PROJ_LIB: /home/wotromp/mambaforge/envs/DT-flood/share/proj
     InitialWorkDirRequirement:
         listing:    
             - $(inputs.pyscript)
