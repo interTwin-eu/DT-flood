@@ -3,10 +3,13 @@
 These python notebooks will guide the use through creating an instance of the [FloodAdapt](https://www.deltares.nl/en/software-and-data/products/floodadapt) backend. This includes setting up a [SFINCS](https://www.deltares.nl/en/software-and-data/products/sfincs) compound flooding model and a [Delft-FIAT](https://www.deltares.nl/en/software-and-data/products/delft-fiat-flood-impact-assessment-tool) impact assesment model using the [HydroMT](https://deltares.github.io/hydromt/latest/) model builder. The notebooks also include creating the configuration files for various types of scenarios.
 
 ## Installation
-
+For Windows users, first install Windows Subsystem for Linux (WSL) and Docker desktop, then activate WSL and follow the steps below:
 To run the notebook, first install the environment by executing
 ```bash
+git clone git@github.com:interTwin-eu/DT-flood.git
+cd DT-flood
 conda env create -f environment.yml
+pip install .
 ```
 This will create a conda environment called DT-Flood
 
@@ -14,30 +17,18 @@ This will create a conda environment called DT-Flood
 ### Order of the notebooks
 There is a particular order in which to run the notebooks:
   1. SetupSFINCS
-  2. SetupFIAT
+  2. SetupFIAT, SetupWFLOW (no particular order)
   3. SetupSite
-  4. SetupMeasure, SetupEvent, SetupProjection (in no particular order)
-  5. SetupStrategy
-  6. SetupScenario
-  7. SetupMetricsConfig, SetupGraphicsConfig (still in development)
-When these steps are completed a backend ready for running scenarios should be set up. Scenarios are run through the RunScenario notebook. This will also create the infographics.
+  4. ConfigureFullScenario
+  5. VisualizeScenario (WIP)
+The ConfigureFullScenario notebook will setup a particular run of the model chain and execute the run in the final cell. The output of the scenario can be visualized in the VisualizeScenario notebook.
 
 ### Necessary input data
-Currently the SetupSFINCS notebook uses data avaible only internally within Deltares. To provide your own data, prepare a [data catalog](https://deltares.github.io/hydromt/latest/user_guide/data_prepare_cat.html) and change the `data_libs` argument of the `hydromt.DataCatalog` and the `SfincsModel` functions. To setup a SFINCS model, the following type of data is used:
-  - Topograhpy
-  - Bathymetry
-  - Waterlevel timeseries at the domain boundary
-  - Meteorological data: windspeeds, airpressure, precipitation
-  - Soil infiltration curves (optional)
-  - Land use (optional)
-When providing your own data, please consult the [HydroMT](https://deltares.github.io/hydromt/latest/user_guide/data_conventions.html) documentation for data conventions.
-
-A geojson for setting up a model domain in the Humber delta is provided.
-
-The Delft-FIAT as-is will use the JRC vulnerability curves, which are provided together with a data catalog for reading them in (the root in the data catalog does need updating).
+Currently the interface to data is a HydroMT DataCatalog (see [here](https://deltares.github.io/hydromt/latest/user_guide/data_prepare_cat.html) for more details). What data it should contain is indicated in the notebooks. 
+This will change later.
 
 ### Running scenarios
-To run a FloodAdapt scenario, the [SFINCS](https://github.com/Deltares/SFINCS) and [Delft-FIAT](https://deltares.github.io/Delft-FIAT/stable/) executables are necessary. Make sure they are installed in the folder DT-flood/system/[fiat,sfincs] so FloodAdapt knows where to find the executables.  
+The WFLOW and SFINCS models are executed using docker containers, please make sure docker is installed.
 
 # Template for interTwin repositories
 
