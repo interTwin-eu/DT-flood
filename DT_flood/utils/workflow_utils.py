@@ -72,10 +72,10 @@ def create_workflow_config(
 
 
 
-    config_fn = f"cwl_config_{scenario}.yml"
+    config_fn = database/f"cwl_config_{scenario}.yml"
 
     # Generate cwl template
-    cmd = f"cwltool --make-template {str(cwl_workflow)} > {config_fn}"
+    cmd = f"cwltool --make-template {str(cwl_workflow)} > {str(config_fn)}"
     subprocess.run(cmd, shell=True)
 
     with open(config_fn, 'r') as f:
@@ -90,8 +90,8 @@ def create_workflow_config(
     cwl_config["fa_database"]['path'] = str(database)
     # cwl_config["data_catalog"]['path'] = str(data_catalog)
 
-    print(f"Write Config file {config_fn} to folder {database/config_fn}")
-    with open(database/config_fn, 'w+') as f:
+    print(f"Write Config file {config_fn} to folder {config_fn}")
+    with open(config_fn, 'w+') as f:
         yaml.dump(cwl_config, f, default_flow_style=False, sort_keys=True)
     
 
