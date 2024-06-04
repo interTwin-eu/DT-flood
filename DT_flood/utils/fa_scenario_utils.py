@@ -6,7 +6,7 @@ import pandas as pd
 
 from hydromt.data_catalog import DataCatalog
 
-from flood_adapt.api import startup
+from flood_adapt.api import static
 from flood_adapt.api import events
 from flood_adapt.api import projections
 from flood_adapt.api import measures
@@ -45,7 +45,7 @@ def init_scenario(database_path: Union[str, os.PathLike], scenario_config_name: 
 
     scenario_path = database_path / scenario_config_name
 
-    db = startup.read_database(database_path=database_path.parent, site_name=database_path.stem)
+    db = static.read_database(database_path=database_path.parent, site_name=database_path.stem)
     with open(scenario_path, 'rb') as f:
         scenario = tomli.load(f)
 
