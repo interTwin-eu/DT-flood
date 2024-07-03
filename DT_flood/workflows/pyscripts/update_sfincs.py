@@ -51,6 +51,7 @@ sf.setup_pressure_forcing_from_grid(press=meteo['press_msl'])
 
 print("Write SFINCS to output folder")
 sf.write_forcing()
+sf.write_config()
 
 print(f"Updating SFINCS model for Scenario {argv[2]} with discharge from WFLOW model at {str(wflow_path)}")
 

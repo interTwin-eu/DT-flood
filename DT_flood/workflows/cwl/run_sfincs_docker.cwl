@@ -19,7 +19,7 @@ inputs:
                 - Directory
                 - File
 
-stdout: sfincs.log
+# stdout: sfincs.log
 
 outputs:
     sfincs_files_out:
@@ -30,5 +30,5 @@ outputs:
                 - File
         outputBinding:
             glob: "*"
-    sfincs_log:
-        type: stdout
+    # sfincs_log:
+    #     type: stdout

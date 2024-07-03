@@ -18,6 +18,7 @@ inputs:
 outputs:
     fa_database_out:
         type: Directory
+        # outputSource: update_fiat/fa_database_out
         outputSource: run_fiat/fa_database_out
 
 
