@@ -11,7 +11,7 @@ from DT_flood.utils.fa_scenario_utils import init_scenario
 
 database, scenario = init_scenario(argv[1], (argv[2]+"_toplevel.toml"))
 
-wflow_path = database.output_path / "Scenarios" / argv[2] / "Flooding" / "simulations" / "wflow_event"
+# wflow_path = database.output_path / "Scenarios" / argv[2] / "Flooding" / "simulations" / "wflow_event"
 sfincs_out_path = database.output_path / "Scenarios" / argv[2] / "Flooding" / "simulations" / "overland"
 
 sfincs_path = database.static_path / "templates" / database.site.attrs.sfincs.overland_model
@@ -52,30 +52,4 @@ sf.setup_pressure_forcing_from_grid(press=meteo['press_msl'])
 print("Write SFINCS to output folder")
 sf.write_forcing()
 sf.write_config()
-
-print(f"Updating SFINCS model for Scenario {argv[2]} with discharge from WFLOW model at {str(wflow_path)}")
-
-logger = setuplog("Update overland SFINCS", log_level=10)
-wf = WflowModel(
-    root=wflow_path,
-    mode="r",
-    logger=logger
-)
-wf.read()
-
-inp = SfincsInput.from_file(sfincs_out_path/"sfincs.inp")
-config = inp.to_dict()
-
-reftime = config["tref"]
-df = wf.results['netcdf']["Q_src"].to_pandas()
-df.index = (df.index - reftime).total_seconds()
-df.to_csv(
-    sfincs_path/"sfincs.dis",
-    sep = " ",
-    header=False,
-)
-
-config.update({"disfile": "sfincs.dis"})
-inp = SfincsInput.from_dict(config)
-inp.write(inp_fn=sfincs_out_path/"sfincs.inp")
 
