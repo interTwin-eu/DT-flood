@@ -46,8 +46,8 @@ sf.setup_waterlevel_forcing(geodataset=scenario['event']['sfincs_forcing']['wate
 meteo = sf.data_catalog.get_rasterdataset(scenario['event']['sfincs_forcing']['meteo'],geom=sf.region,time_tuple=sf.get_model_time())
 
 sf.setup_precip_forcing_from_grid(precip=meteo['precip'], aggregate=False)
-sf.setup_wind_forcing_from_grid(wind=meteo.rename({"wind10_u": "wind_u", "wind10_v": "wind_v"}))
-sf.setup_pressure_forcing_from_grid(press=meteo['press_msl'])
+# sf.setup_wind_forcing_from_grid(wind=meteo.rename({"wind10_u": "wind_u", "wind10_v": "wind_v"}))
+# sf.setup_pressure_forcing_from_grid(press=meteo['press_msl'])
 
 print("Write SFINCS to output folder")
 sf.write_forcing()
