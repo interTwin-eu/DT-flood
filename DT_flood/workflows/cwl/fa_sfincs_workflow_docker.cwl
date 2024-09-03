@@ -10,12 +10,13 @@ inputs:
     fa_database: Directory
     scenario: string
     sfincs_update_script: File
+    sfincs_postprocess_script: File
     arrange_script: File
 
 outputs:
     fa_database_out:
         type: Directory
-        outputSource: arrange_folder/fa_database_out
+        outputSource: postprocess_sfincs/fa_database_out
 
 
 steps:
@@ -51,7 +52,7 @@ steps:
                 sfincs_dir:
                     type: Directory
                     outputBinding:
-                        glob: $(inputs.fa_database.basename+"/output/Scenarios/"+inputs.scenario+"/Flooding/simulations/overland")
+                        glob: $(inputs.fa_database.basename+"/output/scenarios/"+inputs.scenario+"/Flooding/simulations/overland")
     run_sfincs:
         in:
             sfincs_files:
@@ -109,3 +110,12 @@ steps:
                     type: Directory
                     outputBinding:
                         glob: "$(inputs.fa_database.basename)"
+    postprocess_sfincs:
+        in:
+            pyscript: sfincs_postprocess_script
+            fa_database: arrange_folder/fa_database_out
+            scenario: scenario
+        out:
+            [fa_database_out]
+        run:
+            ./postprocess_sfincs.cwl

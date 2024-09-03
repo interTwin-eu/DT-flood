@@ -11,6 +11,7 @@ inputs:
     script_init: File
     script_update_wflow: File
     script_update_sfincs: File
+    script_postprocess_sfincs: File
     script_arrange: File
     script_update_fiat: File
     script_run_fiat: File
@@ -18,7 +19,7 @@ inputs:
 outputs:
     fa_database_out:
         type: Directory
-        # outputSource: update_fiat/fa_database_out
+        # outputSource: run_wflow/fa_database_out
         outputSource: run_fiat/fa_database_out
 
 
@@ -48,6 +49,7 @@ steps:
             fa_database: run_wflow/fa_database_out
             scenario: scenario
             sfincs_update_script: script_update_sfincs
+            sfincs_postprocess_script: script_postprocess_sfincs
             arrange_script: script_arrange
         out:
             [fa_database_out]

@@ -12,7 +12,7 @@ hints:
     DockerRequirement:
         dockerPull: deltares/wflow:v0.7.3
 
-arguments: ["$(inputs.fa_database.path)/output/Scenarios/$(inputs.scenario)/Flooding/simulations/wflow_$(inputs.mode)/wflow_sbm.toml"]
+arguments: ["$(inputs.fa_database.path)/output/scenarios/$(inputs.scenario)/Flooding/simulations/wflow_$(inputs.mode)/wflow_sbm.toml"]
 
 inputs:
     fa_database:

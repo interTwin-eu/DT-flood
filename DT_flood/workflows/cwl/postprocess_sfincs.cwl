@@ -6,10 +6,9 @@ baseCommand: ["python"]
 requirements:
     InlineJavascriptRequirement: {}
     InitialWorkDirRequirement:
-        listing:
-            - entry: $(inputs.pyscript)
-            - entry: $(inputs.fa_database)
-              writable: true
+        listing:    
+            - $(inputs.pyscript)
+            - $(inputs.fa_database)
 
 inputs:
     pyscript:
@@ -24,14 +23,8 @@ inputs:
         type: string
         inputBinding:
             position: 3
-    # data_catalog:
-    #     type: File
-    #     inputBinding:
-    #         position: 4
-    mode:
-        type: string
-        inputBinding:
-            position: 4
+
+
 
 outputs:
     fa_database_out:
