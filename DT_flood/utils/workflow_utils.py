@@ -124,10 +124,12 @@ def run_fa_scenario_workflow(
     result = subprocess.run(cmd_validate, shell=True)
     assert result.returncode == 0, "CWL Validation Error, exit workflow execution"
 
+    logfile = database/f"log_workflow_{scenario}.txt"
+
     if debug:
-        cmd_run = f"cwltool --outdir {str(database.parent)} --debug --preserve-entire-environment {str(workflow_fn)} {str(config_fn)}"
+        cmd_run = f"cwltool --outdir {str(database.parent)} --debug {str(workflow_fn)} {str(config_fn)} | tee {str(logfile)}"
     else:
-        cmd_run = f"cwltool --outdir {str(database.parent)} --preserve-entire-environment {str(workflow_fn)} {str(config_fn)}"
+        cmd_run = f"cwltool --outdir {str(database.parent)} {str(workflow_fn)} {str(config_fn)} | tee {str(logfile)}"
     print("Executing workflow")
     print(f"Running {cmd_run}")
     subprocess.run(cmd_run, shell=True)

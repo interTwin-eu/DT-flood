@@ -18,7 +18,7 @@ root_dir = Path("/home/mambauser/project/ra2ce/")
 input_path = root_dir/"input"
 output_path = root_dir/"output"
 static_path = root_dir/"static"
-map_path = root_dir/"static"/"network"/"map.geojson"
+# map_path = root_dir/"static"/"network"/"map.geojson"
 
 road_list = road_list = [
     RoadTypeEnum.MOTORWAY,
@@ -39,7 +39,7 @@ road_list = road_list = [
 # Define which road to download from OSM
 
 _network_section = NetworkSection(
-    polygon=map_path,
+    polygon="map.geojson",
     network_type=NetworkTypeEnum.DRIVE,
     road_types=road_list,
     save_gpkg=True,

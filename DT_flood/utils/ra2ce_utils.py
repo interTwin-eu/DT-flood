@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 import subprocess
 
-def setup_base_folder(root: os.PathLike, name: str) -> None:
+def setup_base_folder(root: os.PathLike) -> None:
     """Create folder for base RA2CE model.
 
     Parameters
@@ -12,14 +12,14 @@ def setup_base_folder(root: os.PathLike, name: str) -> None:
     name : str
         Name of RA2CE project/model.
     """
-    hazard_folder = root/name/"static"/"hazard"
-    hazard_folder.mkdir(parents=True)
-    network_folder = root/name/"static"/"network"
-    network_folder.mkdir(parents=True)
-    graph_folder = root/name/"static"/"output_graph"
-    graph_folder.mkdir(parents=True)
-    output_folder = root/name/"output"
-    output_folder.mkdir(parents=True)
+    hazard_folder = root/"static"/"hazard"
+    hazard_folder.mkdir(parents=True, exist_ok=True)
+    network_folder = root/"static"/"network"
+    network_folder.mkdir(parents=True, exist_ok=True)
+    graph_folder = root/"static"/"output_graph"
+    graph_folder.mkdir(parents=True, exist_ok=True)
+    output_folder = root/"output"
+    output_folder.mkdir(parents=True, exist_ok=True)
 
 def setup_ra2ce(database: os.PathLike) -> None:
 

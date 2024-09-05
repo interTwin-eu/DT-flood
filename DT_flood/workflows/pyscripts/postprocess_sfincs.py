@@ -21,7 +21,7 @@ scenario_obj.direct_impacts.hazard.write_floodmap_geotiff()
 scenario_obj.direct_impacts.hazard.set_event()
 scenario_obj.direct_impacts.hazard._get_flood_map_path()
 print(f"Floodmap written to {scenario_obj.direct_impacts.hazard.flood_map_path}")
-# hazard_fn = scenario_obj.results_path/"Floooding"/f"FloodMap_{scenario['name']}.tif"
-# hazard = xr.open_dataarray(hazard_fn)
-# hazard = hazard.rio.reproject(hazard.rio.crs)
-# hazard.rio.to_raster(str(hazard_fn))
+hazard_fn = scenario_obj.results_path/"Flooding"/f"FloodMap_{scenario['name']}.tif"
+hazard = xr.open_dataarray(hazard_fn)
+hazard = hazard.rio.reproject(hazard.rio.crs)
+hazard.rio.to_raster(str(hazard_fn))
