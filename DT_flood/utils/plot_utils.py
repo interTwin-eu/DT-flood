@@ -20,6 +20,10 @@ def plot_wflow_model(wflow_model):
     wflow_model : hydromt_wflow.WFlowModel
         Wflow model instance from hydromt_wflow
     """    
+
+    if "wflow_dem" not in wflow_model.staticmaps:
+        wflow_model.read_staticmaps("staticmaps.nc")
+
     proj = ccrs.PlateCarree()
     gdf_bas = wflow_model.basins
     gdf_riv = wflow_model.rivers
