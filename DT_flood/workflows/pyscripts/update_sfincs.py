@@ -4,6 +4,7 @@ from datetime import datetime
 from shutil import copytree
 
 from hydromt.log import setuplog
+from hydromt.exceptions import NoDataException
 from hydromt_wflow import WflowModel
 from hydromt_sfincs import SfincsModel
 from hydromt_sfincs.sfincs_input import SfincsInput
@@ -11,7 +12,6 @@ from DT_flood.utils.fa_scenario_utils import init_scenario
 
 database, scenario = init_scenario(argv[1], (argv[2]+"_toplevel.toml"))
 
-# wflow_path = database.output_path / "Scenarios" / argv[2] / "Flooding" / "simulations" / "wflow_event"
 sfincs_out_path = database.output_path / "Scenarios" / argv[2] / "Flooding" / "simulations" / "overland"
 
 sfincs_path = database.static_path / "templates" / database.site.attrs.sfincs.overland_model
@@ -30,7 +30,6 @@ sf = SfincsModel(
     data_libs=scenario['event']['data_catalogues']
 )
 sf.read()
-# sf.set_root(sfincs_out_path, mode='w+')
 
 print("Set SFINCS timing and forcing")
 sf.setup_config(
@@ -43,14 +42,16 @@ sf.setup_config(
 
 sf.setup_waterlevel_forcing(geodataset=scenario['event']['sfincs_forcing']['waterlevel'],buffer=2000)
 
-print(sf.get_model_time())
-print(sf.region)
-print(scenario['event']['sfincs_forcing']['meteo'])
-meteo = sf.data_catalog.get_rasterdataset(scenario['event']['sfincs_forcing']['meteo'],geom=sf.region,time_tuple=sf.get_model_time())
+try:
+    meteo = sf.data_catalog.get_rasterdataset(scenario['event']['sfincs_forcing']['meteo'],geom=sf.region.to_crs(4326),time_tuple=sf.get_model_time())
+except NoDataException:
+    meteo = sf.data_catalog.get_rasterdataset(scenario['event']['sfincs_forcing']['meteo'],geom=sf.region.to_crs(4326),time_tuple=sf.get_model_time(), buffer=1)
+except:
+    print("Failed to get SFINCS Meteo data")
+    
+
 
 sf.setup_precip_forcing_from_grid(precip=meteo['precip'], aggregate=False)
-# sf.setup_wind_forcing_from_grid(wind=meteo.rename({"wind10_u": "wind_u", "wind10_v": "wind_v"}))
-# sf.setup_pressure_forcing_from_grid(press=meteo['press_msl'])
 
 print("Write SFINCS to output folder")
 sf.write_forcing()
