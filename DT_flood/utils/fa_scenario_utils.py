@@ -147,11 +147,12 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
     """
 
     # Set event type
-    if not database.site.attrs.sfincs.offshore_model:
-        event_type = "Historical_nearshore"
-    else: 
-        # event_type = "offshore"
-        raise NotImplementedError("Offshore models not (yet) supported here")
+    # if not database.site.attrs.sfincs.offshore_model:
+    #     event_type = "Historical_nearshore"
+    # else: 
+    #     # event_type = "offshore"
+    #     raise NotImplementedError("Offshore models not (yet) supported here")
+    event_type = "Historical_nearshore"
     
     # Set meteo forcing type
     dc = DataCatalog(scenario_config["event"]["data_catalogues"])
@@ -325,7 +326,8 @@ def create_strategy_config(database: IDatabase, scenario_config: dict) -> IStrat
         'description': f"Strategy generated from toplevel {scenario_config['name']} config file",
     }
     measure_list = []
-    measures_existing = measures.get_measures(database)
+    # measures_existing = measures.get_measures(database)
+    measures_existing = measures.get_measures()
     for measure in scenario_config["strategy"]:
         if not 'measure' in measure:
             continue

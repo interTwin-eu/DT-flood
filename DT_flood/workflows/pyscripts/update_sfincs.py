@@ -43,6 +43,9 @@ sf.setup_config(
 
 sf.setup_waterlevel_forcing(geodataset=scenario['event']['sfincs_forcing']['waterlevel'],buffer=2000)
 
+print(sf.get_model_time())
+print(sf.region)
+print(scenario['event']['sfincs_forcing']['meteo'])
 meteo = sf.data_catalog.get_rasterdataset(scenario['event']['sfincs_forcing']['meteo'],geom=sf.region,time_tuple=sf.get_model_time())
 
 sf.setup_precip_forcing_from_grid(precip=meteo['precip'], aggregate=False)
