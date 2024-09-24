@@ -18,3 +18,4 @@ dependencies:
     - git+https://github.com/Deltares-research/FloodAdapt.git@6a18711
     - gwwapi
     - solara
+    - ipyleaflet
