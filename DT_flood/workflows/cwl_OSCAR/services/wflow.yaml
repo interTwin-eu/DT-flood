@@ -1,0 +1,15 @@
+functions:
+  oscar:
+  - cluster-id:
+      name: wflow
+      cpu: '2.0'
+      memory: 3Gi
+      image: deltares/wflow:v0.7.3
+      script: ../wflow_script.sh
+      log_level: DEBUG   # To avoid supervisor logs in response
+      input:
+      - storage_provider: minio
+        path: wflow/in
+      output:
+      - storage_provider: minio
+        path: wflow/out
