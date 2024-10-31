@@ -6,7 +6,7 @@ baseCommand: python
 arguments: [$(inputs.uploadScript),"--bucket",$(inputs.bucket),"--filename", $(inputs.file), "--endpoint",$(inputs.minioEndpoint),"--accesskey",$(inputs.minioAccesskey),"--secretkey",$(inputs.minioSecretkey)]
 inputs:
   file:
-    type: Directory?
+    type: File?
   uploadScript:
     type: File?
   bucket:

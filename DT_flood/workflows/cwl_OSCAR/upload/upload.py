@@ -28,10 +28,11 @@ secretkey=variables['secretkey']
 #print(filename)
 
 # Create client with access and secret key.
-with tarfile.open(filename+".tar", "w:gz") as tar:
-        tar.add(filename, arcname=os.path.basename(filename))
+#with tarfile.open(filename+".tar", "w:gz") as tar:
+#        tar.add(filename, arcname=os.path.basename(filename))
+
 client = Minio(str(endpoint), accesskey, secretkey)
 
 result = client.fput_object(
-    bucket.split("/")[0], '/'.join(bucket.split("/")[1:])+"/"+filename.split("/")[-1], filename+".tar",
+    bucket.split("/")[0], '/'.join(bucket.split("/")[1:])+"/"+filename.split("/")[-1], filename,
 )

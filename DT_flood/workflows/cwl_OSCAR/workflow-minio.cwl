@@ -8,7 +8,7 @@ requirements:
 
 inputs:
   file:
-    type: Directory?
+    type: File?
   uploadScript:
     type: File?
   waitScript:
@@ -24,9 +24,9 @@ inputs:
   bucketOutput:
     type: string
 outputs:
-  out:
-    type: File?
-    outputSource: wait/example_out
+    fa_database_out:
+        type: Directory
+        
 steps:
 
   upload:
@@ -49,4 +49,4 @@ steps:
       minioSecretkey: minioSecretkey
       data: 
         source: upload/example_out
-    out: [example_out]
+    out: [fa_database_out]

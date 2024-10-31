@@ -1,11 +1,11 @@
 file:
-  class: Directory
-  path: archive/
+  class: File
+  path: wflow_input.tar
 
 
-minioEndpoint: 
-minioAccesskey: 
-minioSecretkey: 
+minioEndpoint: minio.sleepy-lumiere4.im.grycap.net
+minioAccesskey: minio
+minioSecretkey: minio123
 
 bucketInput: wflow/in
 bucketOutput: wflow/out

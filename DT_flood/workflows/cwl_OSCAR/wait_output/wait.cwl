@@ -15,7 +15,7 @@ inputs:
     type: string
   minioSecretkey:
     type: string
+
 outputs:
-  example_out:
-    type: stdout
-stdout: output.txt
+    fa_database_out:
+        type: Directory
