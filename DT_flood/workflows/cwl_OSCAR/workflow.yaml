@@ -11,3 +11,7 @@ filename:
 oscarService:
   class: Directory
   path: services
+
+fa_database_out:
+  class: Directory
+  path: output

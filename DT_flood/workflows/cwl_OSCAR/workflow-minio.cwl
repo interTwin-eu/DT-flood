@@ -22,8 +22,8 @@ inputs:
   oscarService:
     type: Directory?
 outputs:
-    example_out:
-        type: File
+    fa_database_out:
+        type: Directory
         
 steps:
   oscar:
@@ -36,4 +36,4 @@ steps:
       service: service
       filename: filename
       oscarService: oscarService
-    out: [example_out]
+    out: [fa_database_out]
