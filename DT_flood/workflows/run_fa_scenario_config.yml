@@ -23,3 +23,18 @@ script_update_fiat:
 script_run_fiat:
   class: File
   path: "./pyscripts/run_fiat.py"
+
+
+oscarScript:
+  class: File
+  path: cwl_OSCAR/oscar_all/oscar.py
+endpoint: 
+user: 
+password: 
+service: wflow
+filename:
+  class: File
+  path: cwl_OSCAR/wflow_input.tar
+oscarService:
+  class: Directory
+  path: cwl_OSCAR/services

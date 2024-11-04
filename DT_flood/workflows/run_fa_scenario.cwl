@@ -14,7 +14,13 @@ inputs:
     script_arrange: File
     script_update_fiat: File
     script_run_fiat: File
-
+    oscarScript: File
+    endpoint: string
+    user: string
+    password: string
+    service: string
+    filename: File
+    oscarService: Directory
 outputs:
     fa_database_out:
         type: Directory
@@ -38,6 +44,13 @@ steps:
             scenario: scenario
             # data_catalog: data_catalog
             wflow_update_script: script_update_wflow
+            oscarScript: oscarScript
+            endpoint: endpoint
+            user: user
+            password: password
+            service: service
+            filename: filename
+            oscarService: oscarService
         out:
             [fa_database_out]
         run:
