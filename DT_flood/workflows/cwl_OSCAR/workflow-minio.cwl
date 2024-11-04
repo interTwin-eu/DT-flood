@@ -49,4 +49,5 @@ steps:
       minioSecretkey: minioSecretkey
       data: 
         source: upload/example_out
-    out: [fa_database_out]
+    # out: [fa_database_out]
+    out: [std_out]

@@ -3,9 +3,13 @@ file:
   path: wflow_input.tar
 
 
-minioEndpoint: minio.sleepy-lumiere4.im.grycap.net
+# minioEndpoint: minio.sleepy-lumiere4.im.grycap.net
+# minioAccesskey: minio
+# minioSecretkey: minio123
+
+minioEndpoint: minio.charming-zhukovsky8.im.grycap.net
 minioAccesskey: minio
-minioSecretkey: minio123
+minioSecretkey:
 
 bucketInput: wflow/in
 bucketOutput: wflow/out
