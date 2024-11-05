@@ -98,7 +98,7 @@ def uploadFileMinIO(client,inputinfo):
 
 
 def waitOutput(client, outputinfo):
-    """#Wait the output 
+    #Wait the output 
     print("Waiting the output ")
     with client.listen_bucket_notification(
         outputinfo["path"].split("/")[0],
@@ -109,15 +109,15 @@ def waitOutput(client, outputinfo):
             outputfile=event["Records"][0]["s3"]["object"]["key"]
             print(event["Records"][0]["s3"]["object"]["key"])
             break
-    #Download the file"""
+    #Download the file
     print("Downloading the file")
     client.fget_object(outputinfo["path"].split("/")[0], 
-                    "out/archive.tar.nc",
+                    outputfile,
                     output+"/"+filename.split("/")[-1]+".nc")
 
 
 client=checkOSCARconnection()
 minioinfo, inputinfo, outputinfo=checkService(client,service,service_directory)
 minio_client=connectMinIO(minioinfo)
-#uploadFileMinIO(minio_client,inputinfo)
+uploadFileMinIO(minio_client,inputinfo)
 waitOutput(minio_client, outputinfo)
