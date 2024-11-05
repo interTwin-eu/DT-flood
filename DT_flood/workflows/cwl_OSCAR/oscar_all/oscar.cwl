@@ -3,11 +3,12 @@
 cwlVersion: v1.0
 class: CommandLineTool
 baseCommand: python
-arguments: [$(inputs.oscarScript),"--endpoint",$(inputs.endpoint), "--user",$(inputs.user), "--password",$(inputs.password), "--service",$(inputs.service), "--filename", $(inputs.filename),"--service_directory",$(inputs.oscarService)]
+arguments: [$(inputs.oscar_script),"--endpoint",$(inputs.endpoint), "--user",$(inputs.user), "--password",$(inputs.password), "--service",$(inputs.service), "--filename", $(inputs.filename),"--service_directory",$(inputs.oscar_service),"--output",$(inputs.output)]
+
 
 inputs:
-  oscarScript:
-    type: File?
+  oscar_script:
+    type: File
   endpoint:
     type: string
   user:
@@ -17,9 +18,12 @@ inputs:
   service:
     type: string
   filename:
-    type: File?
-  oscarService:
-    type: Directory?
+    type: File
+  oscar_service:
+    type: Directory
+  output:
+    type: Directory
+  
 outputs:
-    fa_database_out:
-        type: Directory
+  fa_database_out:
+    type: Directory?

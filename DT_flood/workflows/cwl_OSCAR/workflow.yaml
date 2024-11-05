@@ -1,4 +1,4 @@
-oscarScript:
+oscar_script:
   class: File
   path: oscar_all/oscar.py
 endpoint: 
@@ -8,10 +8,10 @@ service: wflow
 filename:
   class: File
   path: wflow_input.tar
-oscarService:
+oscar_service:
   class: Directory
   path: services
 
-fa_database_out:
+output:
   class: Directory
   path: output

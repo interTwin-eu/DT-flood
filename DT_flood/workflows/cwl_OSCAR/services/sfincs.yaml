@@ -1,0 +1,15 @@
+functions:
+  oscar:
+  - cluster-id:
+      name: sfincs
+      cpu: '2.0'
+      memory: 3Gi
+      image: deltares/sfincs-cpu:sfincs-v2.1.1-Dollerup-Release
+      script: sfincs_script.sh
+      log_level: DEBUG   # To avoid supervisor logs in response
+      input:
+      - storage_provider: minio
+        path: sfincs/in
+      output:
+      - storage_provider: minio
+        path: sfincs/out

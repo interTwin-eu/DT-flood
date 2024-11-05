@@ -25,7 +25,7 @@ script_run_fiat:
   path: "./pyscripts/run_fiat.py"
 
 
-oscarScript:
+oscar_script:
   class: File
   path: cwl_OSCAR/oscar_all/oscar.py
 endpoint: 
@@ -35,6 +35,9 @@ service: wflow
 filename:
   class: File
   path: cwl_OSCAR/wflow_input.tar
-oscarService:
+oscar_service:
   class: Directory
   path: cwl_OSCAR/services
+output:
+  class: Directory
+  path: cwl_OSCAR/output

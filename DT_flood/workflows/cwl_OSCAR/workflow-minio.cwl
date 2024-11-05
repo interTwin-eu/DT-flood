@@ -7,8 +7,8 @@ requirements:
   InlineJavascriptRequirement: {}
 
 inputs:
-  oscarScript:
-    type: File?
+  oscar_script:
+    type: File
   endpoint:
     type: string
   user:
@@ -18,22 +18,28 @@ inputs:
   service:
     type: string
   filename:
-    type: File?
-  oscarService:
-    type: Directory?
+    type: File
+  oscar_service:
+    type: Directory
+  output:
+    type: Directory
+
 outputs:
-    fa_database_out:
-        type: Directory
-        
+  fa_database_out:
+    type:
+      type: array
+      items: [File, Directory, string]
+      
 steps:
   oscar:
     run: oscar_all/oscar.cwl
     in:
-      oscarScript: oscarScript
+      oscar_script: oscar_script
       endpoint: endpoint
       user: user
       password: password
       service: service
       filename: filename
-      oscarService: oscarService
+      oscar_service: oscar_service
+      output: output
     out: [fa_database_out]
