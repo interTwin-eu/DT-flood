@@ -10,7 +10,7 @@ from ra2ce.network.exporters.multi_graph_network_exporter import MultiGraphNetwo
 from ra2ce.analysis.analysis_config_data.analysis_config_data import AnalysisConfigData, AnalysisSectionLosses, ProjectSection
 from ra2ce.analysis.analysis_config_data.enums.weighing_enum import WeighingEnum
 
-from ra2ce_utils_docker import export_NetworkConfigData, export_AnalysisConfigData, tree
+from utils_ra2ce_docker import export_NetworkConfigData, export_AnalysisConfigData, tree
 
 
 root_dir = Path("/home/mambauser/project/ra2ce/")
@@ -18,7 +18,7 @@ root_dir = Path("/home/mambauser/project/ra2ce/")
 input_path = root_dir/"input"
 output_path = root_dir/"output"
 static_path = root_dir/"static"
-# map_path = root_dir/"static"/"network"/"map.geojson"
+map_path = root_dir/"static"/"network"/"map.geojson"
 
 road_list = road_list = [
     RoadTypeEnum.MOTORWAY,
@@ -39,7 +39,7 @@ road_list = road_list = [
 # Define which road to download from OSM
 
 _network_section = NetworkSection(
-    polygon="map.geojson",
+    polygon=map_path,
     network_type=NetworkTypeEnum.DRIVE,
     road_types=road_list,
     save_gpkg=True,
@@ -72,7 +72,7 @@ od_loss_section = AnalysisSectionLosses(
     name="test multi link od analysis without hazard",
     analysis="multi_link_origin_closest_destination",
     weighing=WeighingEnum.LENGTH,
-    calculate_route_without_disruption=True,
+    calculate_route_without_disruption=False,
     save_csv=True,
     save_gpkg=True
 )
