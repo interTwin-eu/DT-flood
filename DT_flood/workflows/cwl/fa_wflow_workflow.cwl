@@ -61,7 +61,7 @@ steps:
         out:
             [fa_database_out]
         run:
-            ../cwl_OSCAR/oscar_all/oscar.cwl 
+            ../cwl_OSCAR/oscar_workflow/oscar.cwl 
             #./run_wflow.cwl
     run_wflow_event:
         in:
@@ -80,5 +80,5 @@ steps:
         out:
             [fa_database_out]
         run:
-            ../cwl_OSCAR/oscar_all/oscar.cwl 
+            ../cwl_OSCAR/oscar_workflow/oscar.cwl 
             #./run_wflow.cwl

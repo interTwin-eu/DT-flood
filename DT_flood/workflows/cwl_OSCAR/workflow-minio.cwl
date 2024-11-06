@@ -32,7 +32,7 @@ outputs:
       
 steps:
   oscar:
-    run: oscar_all/oscar.cwl
+    run: oscar_workflow/oscar.cwl
     in:
       oscar_script: oscar_script
       endpoint: endpoint

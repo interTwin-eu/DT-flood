@@ -1,6 +1,6 @@
 oscar_script:
   class: File
-  path: oscar_all/oscar.py
+  path: oscar_workflow/oscar.py
 endpoint: 
 user: 
 password: 
@@ -10,7 +10,7 @@ filename:
   path: wflow_input.tar
 oscar_service:
   class: Directory
-  path: services
+  path: oscar_services
 
 output:
   class: Directory

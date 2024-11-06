@@ -27,7 +27,7 @@ script_run_fiat:
 
 oscar_script:
   class: File
-  path: cwl_OSCAR/oscar_all/oscar.py
+  path: cwl_OSCAR/oscar_workflow/oscar.py
 endpoint: 
 user: 
 password: 
