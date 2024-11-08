@@ -7,47 +7,39 @@ requirements:
   InlineJavascriptRequirement: {}
 
 inputs:
-  file:
-    type: File?
-  uploadScript:
-    type: File?
-  waitScript:
-    type: File?
-  minioEndpoint:
+  oscar_script:
+    type: File
+  endpoint:
     type: string
-  minioAccesskey:
+  user:
     type: string
-  minioSecretkey:
+  password:
     type: string
-  bucketInput:
+  service:
     type: string
-  bucketOutput:
-    type: string
-outputs:
-    fa_database_out:
-        type: Directory
-        
-steps:
+  filename:
+    type: File
+  oscar_service:
+    type: Directory
+  output:
+    type: Directory
 
-  upload:
-    run: upload/upload.cwl
+outputs:
+  fa_database_out:
+    type:
+      type: array
+      items: [File, Directory, string]
+      
+steps:
+  oscar:
+    run: oscar_workflow/oscar.cwl
     in:
-      file: file
-      uploadScript: uploadScript
-      bucket: bucketInput
-      minioEndpoint: minioEndpoint
-      minioAccesskey: minioAccesskey
-      minioSecretkey: minioSecretkey
-    out: [example_out]
-  wait:
-    run: wait_output/wait.cwl
-    in:
-      waitScript: waitScript
-      bucket: bucketOutput
-      minioEndpoint: minioEndpoint
-      minioAccesskey: minioAccesskey
-      minioSecretkey: minioSecretkey
-      data: 
-        source: upload/example_out
-    # out: [fa_database_out]
-    out: [std_out]
+      oscar_script: oscar_script
+      endpoint: endpoint
+      user: user
+      password: password
+      service: service
+      filename: filename
+      oscar_service: oscar_service
+      output: output
+    out: [fa_database_out]

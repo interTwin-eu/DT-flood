@@ -6,7 +6,14 @@ inputs:
     scenario: string
     # data_catalog: File
     wflow_update_script: File
-
+    oscar_script: File
+    endpoint: string
+    user: string
+    password: string
+    service: string
+    filename: File
+    oscar_service: Directory
+    output: Directory
 outputs:
     fa_database_out:
         type: Directory
@@ -41,19 +48,37 @@ steps:
         in:
             fa_database: setup_wflow_event/fa_database_out
             scenario: scenario
+            oscar_script: oscar_script
+            endpoint: endpoint
+            user: user
+            password: password
+            service: service
+            filename: filename
+            oscar_service: oscar_service
+            output: output
             mode:
                 default: "warmup"
         out:
             [fa_database_out]
         run:
-            ./run_wflow.cwl
+            ../cwl_OSCAR/oscar_workflow/oscar.cwl 
+            #./run_wflow.cwl
     run_wflow_event:
         in:
             fa_database: run_wflow_warmup/fa_database_out
             scenario: scenario
+            oscar_script: oscar_script
+            endpoint: endpoint
+            user: user
+            password: password
+            service: service
+            filename: filename
+            oscar_service: oscar_service
+            output: output
             mode:
                 default: "event"
         out:
             [fa_database_out]
         run:
-            ./run_wflow.cwl
+            ../cwl_OSCAR/oscar_workflow/oscar.cwl 
+            #./run_wflow.cwl
