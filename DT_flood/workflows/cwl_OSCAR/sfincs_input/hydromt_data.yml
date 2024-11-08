@@ -1,0 +1,80 @@
+HumberDelta_ObsPoints.geojson:
+  data_type: GeoDataFrame
+  provider: user
+  path: /home/wotromp/InterTwin/FloodAdapt_database/Humber/HumberDelta_ObsPoints.geojson
+  driver: vector
+  driver_kwargs:
+    assert_gtype: Point
+fabdem:
+  data_type: RasterDataset
+  path: /home/wotromp/InterTwin/Data/Humber/fabdem.tif
+  driver: raster
+  filesystem: local
+  meta:
+    category: topography
+    paper_doi: CC BY-NC-SA 4.0
+    paper_ref: Hawker et al. (2022)
+    source_license: CC BY-NC-SA 4.0
+    source_url: https://data.bris.ac.uk/data/dataset/25wfy0f9ukoge2gs7a5mqpq2j7
+    source_version: 1.0
+  crs: 4326
+gcn250:
+  data_type: RasterDataset
+  path: /home/wotromp/InterTwin/Data/Humber/gcn250/{variable}.tif
+  driver: raster
+  filesystem: local
+  nodata: 255
+  meta:
+    category: soil
+    paper_doi: 10.1038/s41597-019-0155-x
+    paper_ref: Jaafar et al. (2019)
+    source_license: CC BY 4.0
+    source_url: https://doi.org/10.6084/m9.figshare.7756202.v1
+    source_version: v1
+gebco:
+  data_type: RasterDataset
+  path: /home/wotromp/InterTwin/Data/Humber/gebco.tif
+  driver: raster
+  filesystem: local
+  meta:
+    category: topography
+    paper_doi: 10.5285/a29c5465-b138-234d-e053-6c86abc040b9
+    paper_ref: Weatherall et al (2020)
+    source_license: https://www.gebco.net/data_and_products/gridded_bathymetry_data/#a1
+    source_url: https://www.bodc.ac.uk/data/open_download/gebco/gebco_2020/geotiff/
+    source_version: 2020
+    unit: m+MSL
+  crs: 4326
+globcover:
+  data_type: RasterDataset
+  path: /home/wotromp/InterTwin/Data/Humber/globcover.tif
+  driver: raster
+  filesystem: local
+  meta:
+    category: landuse
+    paper_doi: 10.1594/PANGAEA.787668
+    paper_ref: Arino et al (2012)
+    source_license: CC-BY-3.0
+    source_url: http://due.esrin.esa.int/page_globcover.php
+    source_version: v2.3
+  crs: 4326
+globcover_mapping.csv:
+  data_type: DataFrame
+  provider: user
+  path: /home/wotromp/miniforge3/envs/DT-flood/lib/python3.11/site-packages/hydromt_sfincs/data/lulc/globcover_mapping.csv
+  driver: csv
+  driver_kwargs:
+    index_col: 0
+merit_hydro:
+  data_type: RasterDataset
+  path: /home/wotromp/InterTwin/Data/Humber/merit_hydro/{variable}.tif
+  driver: raster
+  filesystem: local
+  meta:
+    category: topography
+    paper_doi: 10.1029/2019WR024873
+    paper_ref: Yamazaki et al. (2019)
+    source_license: CC-BY-NC 4.0 or ODbL 1.0
+    source_url: http://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_Hydro
+    source_version: 1.0
+  crs: 4326

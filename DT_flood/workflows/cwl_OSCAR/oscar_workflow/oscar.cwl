@@ -18,7 +18,7 @@ inputs:
   service:
     type: string
   filename:
-    type: File
+    type: Directory
   oscar_service:
     type: Directory
   output:

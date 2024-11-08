@@ -19,7 +19,7 @@ inputs:
     user: string
     password: string
     service: string
-    filename: File
+    filename: Directory
     oscar_service: Directory
     output: Directory
 outputs:

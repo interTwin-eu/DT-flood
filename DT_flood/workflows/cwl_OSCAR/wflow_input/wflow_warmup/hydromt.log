@@ -1,0 +1,31 @@
+2024-10-23 08:32:16,828 - update_wflow - log - DEBUG - Writing log messages to new file /tmp/3hl74lm4/Humber/output/Scenarios/test_scenario/Flooding/simulations/wflow_warmup/hydromt.log.
+2024-10-23 08:32:16,837 - update_wflow - model_api - DEBUG - Setting model config options.
+2024-10-23 08:32:16,837 - update_wflow - model_api - INFO - setup_precip_forcing.precip_fn: era5_daily
+2024-10-23 08:32:16,837 - update_wflow - model_api - INFO - setup_precip_forcing.precip_clim_fn: None
+2024-10-23 08:32:16,837 - update_wflow - model_api - INFO - setup_precip_forcing.chunksize: None
+2024-10-23 08:32:16,848 - update_wflow - rasterdataset - INFO - Reading era5_daily netcdf data from /opt/dtflood/DT-flood/Data/era5_daily.nc
+2024-10-23 08:32:16,902 - update_wflow - rasterdataset - DEBUG - Slicing time dim ('2012-12-03T00:00:00', '2013-12-03T00:00:00')
+2024-10-23 08:32:16,912 - update_wflow - rasterdataset - DEBUG - Clip to [-2.382, 52.328, 0.184, 54.495] (epsg:4326))
+2024-10-23 08:32:17,126 - update_wflow - model_api - INFO - setup_temp_pet_forcing.temp_pet_fn: era5_daily
+2024-10-23 08:32:17,127 - update_wflow - model_api - INFO - setup_temp_pet_forcing.pet_method: debruin
+2024-10-23 08:32:17,127 - update_wflow - model_api - INFO - setup_temp_pet_forcing.press_correction: True
+2024-10-23 08:32:17,127 - update_wflow - model_api - INFO - setup_temp_pet_forcing.temp_correction: True
+2024-10-23 08:32:17,127 - update_wflow - model_api - INFO - setup_temp_pet_forcing.wind_correction: True
+2024-10-23 08:32:17,127 - update_wflow - model_api - INFO - setup_temp_pet_forcing.wind_altitude: 10
+2024-10-23 08:32:17,127 - update_wflow - model_api - INFO - setup_temp_pet_forcing.reproj_method: nearest_index
+2024-10-23 08:32:17,127 - update_wflow - model_api - INFO - setup_temp_pet_forcing.fillna_method: None
+2024-10-23 08:32:17,127 - update_wflow - model_api - INFO - setup_temp_pet_forcing.dem_forcing_fn: era5_orography
+2024-10-23 08:32:17,127 - update_wflow - model_api - INFO - setup_temp_pet_forcing.skip_pet: False
+2024-10-23 08:32:17,127 - update_wflow - model_api - INFO - setup_temp_pet_forcing.chunksize: None
+2024-10-23 08:32:17,134 - update_wflow - rasterdataset - INFO - Reading era5_daily netcdf data from /opt/dtflood/DT-flood/Data/era5_daily.nc
+2024-10-23 08:32:17,155 - update_wflow - rasterdataset - DEBUG - Slicing time dim ('2012-12-03T00:00:00', '2013-12-03T00:00:00')
+2024-10-23 08:32:17,165 - update_wflow - rasterdataset - DEBUG - Clip to [-2.382, 52.328, 0.184, 54.495] (epsg:4326))
+2024-10-23 08:32:17,179 - update_wflow - rasterdataset - INFO - Reading era5_orography netcdf data from /opt/dtflood/DT-flood/Data/era5_orography.nc
+2024-10-23 08:32:17,205 - update_wflow - rasterdataset - DEBUG - Clip to [-2.625, 52.125, 0.375, 54.625] (epsg:4326))
+2024-10-23 08:32:17,906 - update_wflow - wflow - INFO - Write model data to /tmp/3hl74lm4/Humber/output/Scenarios/test_scenario/Flooding/simulations/wflow_warmup
+2024-10-23 08:32:17,950 - update_wflow - wflow - INFO - Write grid to /tmp/3hl74lm4/Humber/output/Scenarios/test_scenario/Flooding/simulations/wflow_warmup/staticmaps.nc
+2024-10-23 08:32:18,106 - update_wflow - wflow - INFO - Writing model staticgeom to file.
+2024-10-23 08:32:18,805 - update_wflow - wflow - INFO - Write forcing file
+2024-10-23 08:32:18,817 - update_wflow - wflow - INFO - Process forcing; saving to /tmp/3hl74lm4/Humber/output/Scenarios/test_scenario/Flooding/simulations/wflow_warmup/inmaps-era5-2010.nc
+2024-10-23 08:32:23,552 - update_wflow - wflow - INFO - Writing table files.
+2024-10-23 08:32:23,557 - update_wflow - wflow - INFO - Writing model config to /tmp/3hl74lm4/Humber/output/Scenarios/test_scenario/Flooding/simulations/wflow_warmup/wflow_sbm.toml

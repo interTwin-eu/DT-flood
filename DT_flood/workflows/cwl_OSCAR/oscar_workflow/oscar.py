@@ -3,6 +3,7 @@ import json
 import os
 from minio import Minio
 from oscar_python.client import Client
+import tarfile
 
 parser = argparse.ArgumentParser()
 
@@ -83,17 +84,17 @@ def connect_minio(minio_info):
     return client
 
 
-def upload_file_minio(client, input_info):
+def upload_file_minio(client, input_info, input_file):
     #Upload the file into input bucket
     print("Uploading the file into input bucket")
     result = client.fput_object(
         input_info["path"].split("/")[0],
-        '/'.join(input_info["path"].split("/")[1:]) + "/" + filename.split("/")[-1],
-        filename,
+        '/'.join(input_info["path"].split("/")[1:]) + "/" + input_file.split("/")[-1],
+        input_file,
     )
 
 
-def wait_output(client, output_info):
+def wait_output_and_download(client, output_info):
     #Wait the output 
     print("Waiting the output")
     with client.listen_bucket_notification(
@@ -109,12 +110,30 @@ def wait_output(client, output_info):
     print("Downloading the file")
     client.fget_object(output_info["path"].split("/")[0], 
                     outputfile,
-                    output + "/" + filename.split("/")[-1] + ".nc"
+                    output + "/" + outputfile.split("/")[-1]
     )
+    return output + "/" + outputfile.split("/")[-1]
 
 
+def compress():
+    files = os.listdir(filename)
+    tar_file_ = tarfile.open(filename + ".tar", "w")
+    for x in files:
+        tar_file_.add( name=filename + "/" +x, arcname=x)
+    tar_file_.close()
+    return filename + ".tar"
+
+
+
+def decompress(output_file):
+    with tarfile.open(output_file, 'r') as tar:
+        for member in tar.getmembers():
+            tar.extract(member, path=output)
+
+input_file = compress()
 client = check_oscar_connection()
 minio_info, input_info, output_info = check_service(client, service, service_directory)
 minio_client = connect_minio(minio_info)
-upload_file_minio(minio_client, input_info)
-wait_output(minio_client, output_info)
+upload_file_minio(minio_client, input_info, input_file)
+output_file = wait_output_and_download(minio_client, output_info)
+decompress(output_file)
