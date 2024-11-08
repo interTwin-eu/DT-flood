@@ -1,8 +1,0 @@
-{
-"type": "FeatureCollection",
-"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32630" } },
-"features": [
-{ "type": "Feature", "properties": { "index": 1272 }, "geometry": { "type": "Point", "coordinates": [ 687112.764424094115384, 5997208.941101890988648 ] } },
-{ "type": "Feature", "properties": { "index": 22817 }, "geometry": { "type": "Point", "coordinates": [ 714199.786721685435623, 5960829.68280351255089 ] } }
-]
-}
