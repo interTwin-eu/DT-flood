@@ -11,6 +11,7 @@ inputs:
     scenario: string
     sfincs_update_script: File
     arrange_script: File
+    mode: string
 
 outputs:
     fa_database_out:
@@ -32,6 +33,7 @@ steps:
         in:
             fa_database: setup_sfincs/fa_database_out
             scenario: scenario
+            mode: mode
         out:
             [sfincs_dir]
         run:
@@ -47,11 +49,13 @@ steps:
                     type: Directory
                 scenario:
                     type: string
+                mode:
+                    type: string
             outputs:
                 sfincs_dir:
                     type: Directory
                     outputBinding:
-                        glob: $(inputs.fa_database.basename+"/output/Scenarios/"+inputs.scenario+"/Flooding/simulations/overland")
+                        glob: $(inputs.fa_database.basename+"/output/scenarios/"+inputs.scenario+"/Flooding/simulations/"+inputs.mode)
     run_sfincs:
         in:
             sfincs_files:
@@ -64,8 +68,7 @@ steps:
     fetch_sfincs_files:
         in:
             files: run_sfincs/sfincs_files_out
-            dir_name:
-                default: "overland"
+            dir_name: mode
         out:
             [dir]
         run:

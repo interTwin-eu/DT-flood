@@ -9,7 +9,7 @@ requirements:
 
 hints:
     DockerRequirement:
-        dockerPull: deltares/sfincs-cpu:sfincs-v2.0.5
+        dockerPull: deltares/sfincs-cpu:sfincs-v2.1.1-Dollerup-Release
 
 inputs:
     sfincs_files:
@@ -19,7 +19,6 @@ inputs:
                 - Directory
                 - File
 
-# stdout: sfincs.log
 
 outputs:
     sfincs_files_out:
@@ -30,5 +29,3 @@ outputs:
                 - File
         outputBinding:
             glob: "*"
-    # sfincs_log:
-    #     type: stdout
