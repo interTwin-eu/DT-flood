@@ -30,6 +30,7 @@ output = variables['output']
 
 def check_oscar_connection():
     # Check the service or create it
+    print("Checking OSCAR connection status")
     options_basic_auth = {'cluster_id':'cluster-id',
                     'endpoint': endpoint,
                     'user':user,
@@ -46,6 +47,7 @@ def check_oscar_connection():
 
 
 def check_service(client,service,service_directory):
+    print("Checking OSCAR service status")
     try:
         service_info = client.get_service(service)
         minio_info = json.loads(service_info.text)["storage_providers"]["minio"]["default"]
@@ -116,6 +118,7 @@ def wait_output_and_download(client, output_info):
 
 
 def compress():
+    print("Compressing input")
     files = os.listdir(filename)
     tar_file_ = tarfile.open(filename + ".tar", "w")
     for x in files:
@@ -126,6 +129,7 @@ def compress():
 
 
 def decompress(output_file):
+    print("Decompressing output")
     with tarfile.open(output_file, 'r') as tar:
         for member in tar.getmembers():
             tar.extract(member, path=output)
