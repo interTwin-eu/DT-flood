@@ -7,6 +7,7 @@ functions:
       image: deltares/wflow:v0.7.3
       script: wflow_script.sh
       log_level: DEBUG   # To avoid supervisor logs in response
+      vo: dev.intertwin.eu
       input:
       - storage_provider: minio
         path: wflow/in

@@ -4,13 +4,13 @@ import os
 from minio import Minio
 from oscar_python.client import Client
 import tarfile
+import uuid
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--endpoint")
 parser.add_argument("--filename")
-parser.add_argument("--user")
-parser.add_argument("--password")
+parser.add_argument("--token")
 parser.add_argument("--service")
 parser.add_argument("--service_directory")
 parser.add_argument("--output")
@@ -21,8 +21,7 @@ variables = vars(args)
 
 endpoint = variables['endpoint']
 filename = variables['filename']
-user = variables['user']
-password = variables['password']
+token = variables['token']
 service = variables['service']
 service_directory = variables['service_directory']
 output = variables['output']
@@ -33,14 +32,14 @@ def check_oscar_connection():
     print("Checking OSCAR connection status")
     options_basic_auth = {'cluster_id':'cluster-id',
                     'endpoint': endpoint,
-                    'user':user,
-                    'password':password,
-                    'ssl':'True'}
+                    'oidc_token': token,                
+                    'ssl': 'True'}
 
     client = Client(options = options_basic_auth)
     try:
         info = client.get_cluster_info()
     except Exception as err:
+        print(err)
         print("OSCAR cluster not Found")
         exit(1)
     return client
@@ -89,14 +88,16 @@ def connect_minio(minio_info):
 def upload_file_minio(client, input_info, input_file):
     #Upload the file into input bucket
     print("Uploading the file into input bucket")
+    random= uuid.uuid4().hex + "_" + input_file.split("/")[-1]
     result = client.fput_object(
         input_info["path"].split("/")[0],
-        '/'.join(input_info["path"].split("/")[1:]) + "/" + input_file.split("/")[-1],
+        '/'.join(input_info["path"].split("/")[1:]) + "/" + random,
         input_file,
     )
+    return random.split("_")[0]
 
 
-def wait_output_and_download(client, output_info):
+def wait_output_and_download(client, output_info,execution_id):
     #Wait the output 
     print("Waiting the output")
     with client.listen_bucket_notification(
@@ -107,7 +108,9 @@ def wait_output_and_download(client, output_info):
         for event in events:
             outputfile = event["Records"][0]["s3"]["object"]["key"]
             print(event["Records"][0]["s3"]["object"]["key"])
-            break
+            if (execution_id in outputfile) :
+                print(event["Records"][0]["s3"]["object"]["key"])
+                break
     #Download the file
     print("Downloading the file")
     client.fget_object(output_info["path"].split("/")[0], 
@@ -138,6 +141,7 @@ input_file = compress()
 client = check_oscar_connection()
 minio_info, input_info, output_info = check_service(client, service, service_directory)
 minio_client = connect_minio(minio_info)
-upload_file_minio(minio_client, input_info, input_file)
-output_file = wait_output_and_download(minio_client, output_info)
+execution_id = upload_file_minio(minio_client, input_info, input_file)
+print(execution_id)
+output_file = wait_output_and_download(minio_client, output_info, execution_id)
 decompress(output_file)

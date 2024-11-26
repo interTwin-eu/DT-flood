@@ -11,9 +11,7 @@ inputs:
     type: File
   endpoint:
     type: string
-  user:
-    type: string
-  password:
+  token:
     type: string
   service_wflow:
     type: string
@@ -40,8 +38,7 @@ steps:
     in:
       oscar_script: oscar_script
       endpoint: endpoint
-      user: user
-      password: password
+      token: token
       service: service_wflow
       filename: filename_wflow
       oscar_service: oscar_service
@@ -52,8 +49,7 @@ steps:
     in:
       oscar_script: oscar_script
       endpoint: endpoint
-      user: user
-      password: password
+      token: token
       service: service_sfincs
       filename: filename_sfincs
       oscar_service: oscar_service
