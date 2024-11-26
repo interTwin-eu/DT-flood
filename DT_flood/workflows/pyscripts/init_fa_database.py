@@ -2,6 +2,7 @@ from pathlib import Path
 from sys import argv
 from os import makedirs
 from DT_flood.utils.fa_scenario_utils import init_scenario, create_scenario
+from flood_adapt.object_model.utils import write_finished_file
 from shutil import copytree, rmtree
 
 print("Make extra copies of input folders")
@@ -20,3 +21,5 @@ if new_scenario.results_path.exists():
 
 print(f"Creating output folder at {new_scenario.results_path}")
 makedirs(new_scenario.results_path)
+
+write_finished_file(new_scenario.results_path)

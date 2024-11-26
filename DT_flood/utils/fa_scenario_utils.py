@@ -12,10 +12,10 @@ from flood_adapt.api import projections
 from flood_adapt.api import measures
 from flood_adapt.api import strategies
 from flood_adapt.api import scenarios
+from flood_adapt.config import Settings
 from flood_adapt.object_model.interface.database import IDatabase
 from flood_adapt.object_model.interface.events import IEvent
 from flood_adapt.object_model.interface.projections import IProjection
-# from flood_adapt.object_model.interface.measures import IMeasure
 from flood_adapt.object_model.interface.strategies import IStrategy
 from flood_adapt.object_model.interface.scenarios import IScenario
 
@@ -45,6 +45,12 @@ def init_scenario(database_path: Union[str, os.PathLike], scenario_config_name: 
 
     scenario_path = database_path / scenario_config_name
 
+    Settings(
+        database_root = database_path.parent,
+        database_name = database_path.stem,
+        system_folder = database_path/"system",
+        delete_crashed_runs = False,
+    )
     db = static.read_database(database_path=database_path.parent, site_name=database_path.stem)
     with open(scenario_path, 'rb') as f:
         scenario = tomli.load(f)
@@ -147,15 +153,14 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
     """
 
     # Set event type
-    # if not database.site.attrs.sfincs.offshore_model:
-    #     event_type = "Historical_nearshore"
-    # else: 
-    #     # event_type = "offshore"
-    #     raise NotImplementedError("Offshore models not (yet) supported here")
-    event_type = "Historical_nearshore"
+    if not database.site.attrs.sfincs.offshore_model:
+        event_type = "Historical_nearshore"
+    else: 
+        event_type = "Historical_offshore"
     
     # Set meteo forcing type
-    dc = DataCatalog(scenario_config["event"]["data_catalogues"])
+    if scenario_config['event']['data_catalogues']:
+        dc = DataCatalog(scenario_config["event"]["data_catalogues"])
     if 'meteo' in scenario_config["event"]["sfincs_forcing"].keys():
         wind_type = 'none'
         rainfall_type = 'none'
@@ -178,16 +183,19 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
 
     
     # Set waterlevel forcing type
-    tide_type = 'timeseries'
-    tide_dict = {'source': tide_type}
-    if (
+    if event_type == "Historical_nearshore":
+        tide_type = "timeseries"
+        if (
         scenario_config["event"]["sfincs_forcing"]["waterlevel"] in dc.sources or 
         Path(scenario_config["event"]["sfincs_forcing"]["waterlevel"]).suffix == '.nc'
         ):
-        placeholder_path = database.input_path/'events'/scenario_config["event"]["name"]/'placeholder.csv'
-        tide_dict['timeseries_file'] = str(placeholder_path.name)
-    else:
-        tide_dict["timeseries_file"] = scenario_config["event"]["sfincs_forcing"]["waterlevel"]
+            placeholder_path = database.input_path/'events'/scenario_config["event"]["name"]/'placeholder.csv'
+            tide_dict['timeseries_file'] = str(placeholder_path.name)
+        else:
+            tide_dict["timeseries_file"] = scenario_config["event"]["sfincs_forcing"]["waterlevel"]
+    elif event_type =="Historical_offshore":
+        tide_type = "model"
+    tide_dict = {'source': tide_type}
 
     event_dict = {
         'name': scenario_config["event"]["name"],
