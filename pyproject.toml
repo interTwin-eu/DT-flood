@@ -12,4 +12,40 @@ authors = [
 description = "Digital Twin for flooding developed for the InterTwin project"
 readme = "README.md"
 license = {file = "LICENSE"}
-dependencies = []
+dependencies = [
+    "cartopy",
+    "cwltool ; platform_system != 'Windows'",
+    "dask==2024.6.0",
+    "delft_fiat==0.1.1",
+    "ipykernel",
+    "hydromt",
+    "hydromt_wflow>=0.6,<0.7",
+    "pandas>=2.0.0",
+    "python==3.11.*",
+    "pip>=23.1.2"
+]
+
+[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["win-64", "linux-64"]
+
+[tool.pixi.dependencies]
+cartopy = "*"
+dask = "2024.6.0"
+delft_fiat = "0.1.1"
+ipykernel = "*"
+hydromt_wflow = ">=0.6,<0.7"
+pandas = ">=2.0.0"
+
+[tool.pixi.target.linux-64.dependencies]
+cwltool = "*"
+
+[tool.pixi.pypi-dependencies]
+dfm-tools = "*"
+earthkit = "*"
+jupyter = "*"
+gwwapi = "*"
+solara = "*"
+ipyleaflet = "*"
+mapbox-earcut = "*"
+DT_flood = { path = ".", editable = true }
