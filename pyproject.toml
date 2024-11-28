@@ -15,13 +15,11 @@ license = {file = "LICENSE"}
 dependencies = [
     "cartopy",
     "cwltool ; platform_system != 'Windows'",
-    "dask==2024.6.0",
     "delft_fiat==0.1.1",
     "ipykernel",
     "hydromt",
     "hydromt_wflow>=0.6,<0.7",
-    "pandas>=2.0.0",
-    "python==3.11.*",
+    "pandas<2.0.0",
     "pip>=23.1.2"
 ]
 
@@ -31,21 +29,20 @@ platforms = ["win-64", "linux-64"]
 
 [tool.pixi.dependencies]
 cartopy = "*"
-dask = "2024.6.0"
 delft_fiat = "0.1.1"
 ipykernel = "*"
+hydromt = ">=0.10, <0.11"
 hydromt_wflow = ">=0.6,<0.7"
-pandas = ">=2.0.0"
+lxml = ">=4.6,<5.0"
+pandas = "<2.0.0"
 
 [tool.pixi.target.linux-64.dependencies]
 cwltool = "*"
 
 [tool.pixi.pypi-dependencies]
-dfm-tools = "*"
-earthkit = "*"
-jupyter = "*"
-gwwapi = "*"
-solara = "*"
-ipyleaflet = "*"
-mapbox-earcut = "*"
-DT_flood = { path = ".", editable = true }
+hydromt-sfincs = {git = "https://github.com/Deltares-research/hydromt_sfincs_insiders.git"}
+deltares-coastalhazardstoolkit = { git = "https://github.com/Deltares-research/CoastalHazardsToolkit.git" }
+cht-cyclones = {git = "https://github.com/deltares/cht_cyclones.git"}
+cht-observations = {git = "https://github.com/deltares/cht_observations.git"}
+hydromt-fiat = {git  = "https://github.com/deltares/hydromt_fiat.git"}
+flood-adapt = { git = "https://github.com/Deltares-research/FloodAdapt.git" }
