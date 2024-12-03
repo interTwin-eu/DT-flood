@@ -6,21 +6,21 @@ channels:
 
 dependencies:
   - cartopy
-  # - cwltool
+  - cwltool
   - dask=2024.6.0
-  - delft_fiat=0.1.1 #unpin after FA is compatible with latest
+  - conda-forge/label/delft_fiat_rc::delft_fiat #unpin after FA is compatible with latest
   - ipykernel
-  - hydromt_wflow
-  # - pandas>2.0.0
+  # - hydromt_wflow
+  - pandas>2.0.0
   - python=3.11
   - pip
   - pip:
     - git+https://github.com/Deltares-research/CoastalHazardsToolkit.git
-    - dfm_tools
-    - earthkit
-    - jupyter
+    # - dfm_tools
+    # - earthkit
+    # - jupyter
     - git+https://github.com/Deltares-research/FloodAdapt.git
-    - gwwapi
-    - solara
-    - ipyleaflet
-    - mapbox-earcut
+    # - gwwapi
+    # - solara
+    # - ipyleaflet
+    # - mapbox-earcut
