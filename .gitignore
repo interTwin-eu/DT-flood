@@ -5,6 +5,6 @@ __pycache__/
 *.py[cod]
 
 .vscode/
-
+.pixi/
 DT_flood/workflows/deltares_sfincs-cpu:sfincs-v2.0.3-Cauberg.sfincs
 DT_flood/workflows/deltares_wflow:v0.7.3.sif

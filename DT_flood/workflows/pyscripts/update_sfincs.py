@@ -8,12 +8,11 @@ import geopandas as gpd
 
 from hydromt.log import setuplog
 from hydromt.exceptions import NoDataException
-from hydromt_wflow import WflowModel
 from hydromt_sfincs import SfincsModel
 from hydromt_sfincs.sfincs_input import SfincsInput
 from DT_flood.utils.fa_scenario_utils import init_scenario
 from flood_adapt.api import events
-from flood_adapt.integrator.sfincs_adapter import SfincsAdapter
+from flood_adapt.adapter.sfincs_adapter import SfincsAdapter
 
 database, scenario_config = init_scenario(argv[1], (argv[2]+"_toplevel.toml"))
 scenario = database.scenarios.get(scenario_config['name'])
