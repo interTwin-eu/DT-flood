@@ -65,7 +65,7 @@ else:
     ValueError("Provide data in correct format.")
 
 sf.setup_pressure_forcing_from_grid(press=ds['press_msl'])
-sf.setup_wind_forcing_from_grid(wind=ds[['wind_u', 'wind_v']])
+sf.setup_wind_forcing_from_grid(wind=ds[['wind10_u', 'wind10_v']])
 
 sf.write_forcing()
 sf.write_config()
