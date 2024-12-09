@@ -15,7 +15,7 @@ functions:
         slurm-job.vk.io/flags: --job-name=test-sfincs --time=02:30:00   --nodes=1
       input:
       - storage_provider: minio
-        path: sfincs/in
+        path: sfincsinterlink/in
       output:
       - storage_provider: minio
-        path: sfincs/out
+        path: sfincsinterlink/out

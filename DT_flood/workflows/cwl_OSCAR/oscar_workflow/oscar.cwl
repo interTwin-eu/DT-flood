@@ -3,7 +3,7 @@
 cwlVersion: v1.0
 class: CommandLineTool
 baseCommand: python
-arguments: [$(inputs.oscar_script),"--endpoint",$(inputs.endpoint), "--token",$(inputs.token), "--service",$(inputs.service), "--filename", $(inputs.filename),"--service_directory",$(inputs.oscar_service),"--output",$(inputs.output)]
+arguments: [$(inputs.oscar_script),"--endpoint",$(inputs.endpoint), "--user",$(inputs.user), "--password",$(inputs.password), "--token",$(inputs.token), "--service",$(inputs.service), "--filename", $(inputs.filename),"--service_directory",$(inputs.oscar_service),"--output",$(inputs.output)]
 
 
 inputs:
@@ -11,8 +11,12 @@ inputs:
     type: File
   endpoint:
     type: string
+  user:
+    type: string?
+  password:
+    type: string?
   token:
-    type: string
+    type: string?
   service:
     type: string
   filename:
