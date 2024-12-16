@@ -17,5 +17,6 @@ dependencies:
     - jupyter
     - git+https://github.com/Deltares-research/FloodAdapt.git
     - gwwapi
+    - liboidcagent
     - minio
     - oscar-python

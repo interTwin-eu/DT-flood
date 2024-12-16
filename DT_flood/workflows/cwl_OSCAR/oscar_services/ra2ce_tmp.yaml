@@ -1,0 +1,16 @@
+functions:
+  oscar:
+  - cluster-id:
+      name: ra2ce
+      cpu: '2.0'
+      memory: 3Gi
+      image: containers.deltares.nl/ra2ce/ra2ce:latest
+      script: /tmp/ao_fbjha/stgbe1c9195-68bc-42f6-8afc-d25edf4dfef0/oscar_services/ra2ce_script.sh
+      log_level: DEBUG   # To avoid supervisor logs in response
+      vo: dev.intertwin.eu
+      input:
+      - storage_provider: minio
+        path: ra2ce/in
+      output:
+      - storage_provider: minio
+        path: ra2ce/out
