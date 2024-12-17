@@ -357,8 +357,8 @@ def create_strategy_config(database: IDatabase, scenario_config: dict) -> IStrat
 
             measure_dict.update({'selection_type': selection_type})
             measure_dict.update(scenario_config['strategy'][measure]['misc'])
-            measure_new = measures.create_measure(attrs=measure_dict, type=scenario_config['strategy'][measure]['type'], database=database)
-            measures.save_measure(measure_new, database)
+            measure_new = measures.create_measure(attrs=measure_dict, type=scenario_config['strategy'][measure]['type'])
+            measures.save_measure(measure_new)
 
     scenario_dict.update({'measures': measure_list})
     return strategies.create_strategy(attrs=scenario_dict)

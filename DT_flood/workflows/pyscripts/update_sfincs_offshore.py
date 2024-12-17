@@ -23,8 +23,8 @@ sfincs_out_path = scenario.results_path/"Flooding"/"simulations"/"offshore"
 start_time = datetime.strptime(scenario_config['event']['start_time'],"%Y-%m-%d %H:%M:%S")
 end_time = datetime.strptime(scenario_config['event']['end_time'],"%Y-%m-%d %H:%M:%S")
 
-# move start time back 4 days to let the waterlevel propagate from edges of offshore model to the centre
-start_time = start_time - timedelta(days=1)
+# move start time back 2 days to let the waterlevel propagate from edges of offshore model to the centre
+start_time = start_time - timedelta(days=2)
 
 meteo_fn = scenario_config['event']['sfincs_forcing_offshore']
 

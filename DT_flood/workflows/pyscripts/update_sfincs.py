@@ -62,7 +62,10 @@ elif event.attrs.template == "Historical_offshore":
         columns=[str(x) for x in bnd_points.index],
         index=offshore_his.time.values
     )
-    sf.setup_waterlevel_forcing(timeseries=timeseries, locations=bnd_points, merge=False)
+    sf.setup_waterlevel_forcing(
+        timeseries=timeseries+scenario.direct_impacts.hazard.physical_projection.attrs.sea_level_rise.value,
+        locations=bnd_points,
+        merge=False)
 else:
     ValueError("No valid event type")
 
@@ -74,7 +77,10 @@ if scenario_config['event']['sfincs_forcing']['meteo']:
     except:
         print("Failed to get SFINCS Meteo data")
     
-    sf.setup_precip_forcing_from_grid(precip=meteo['precip'], aggregate=False)
+    sf.setup_precip_forcing_from_grid(
+        precip=meteo['precip']
+            * (1+scenario.direct_impacts.hazard.physical_projection.attrs.rainfall_increase/100.0),
+        aggregate=False)
 else:
     print("No overland meteo forcing specified.")
 

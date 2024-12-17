@@ -10,8 +10,10 @@ dependencies:
   # - dask=2024.6.0
   # - conda-forge/label/delft_fiat_rc::delft_fiat #unpin after FA is compatible with latest
   - delft_fiat=0.1.1
+  - folium
   - ipykernel
   # - hydromt_wflow
+  - mapclassify
   - pandas<2.0
   - python<3.12
   - pip
