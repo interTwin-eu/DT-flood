@@ -9,6 +9,7 @@ from pathlib import Path
 import datetime as dt
 import os
 import tomli_w
+import tomli
 
 # from DT_flood.utils.workflow_utils import create_workflow_config, run_fa_scenario_workflow # , run_scenario
 
@@ -26,34 +27,62 @@ import cartopy.crs as ccrs
 import geopandas as gpd
 matplotlib.use('Agg')
 
+# FLOODMAP
 from localtileserver import TileClient
 
+
 proj = ccrs.PlateCarree()
+
 
 from html2image import Html2Image
 
 
-##################################################################################################
-##################################################################################################
-##################################################################################################
+
+from flood_adapt.api.static import read_database
+# from flood_adapt.config import Settings
+from flood_adapt.api.scenarios import get_scenarios
+from flood_adapt.api.strategies import get_strategies
+from flood_adapt.api.measures import get_measures
+from flood_adapt.api.projections import get_projections
+from flood_adapt.api.events import get_events
+
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
 
 ###################################################### TO ADJUST #######################################################
 name_overall = "scheveningen_nov24" # "scheveningen"
 scenario = "DT-climate_baseline" # "test_scenario" # test_current_no_measures --> sucessful for metrics; test_scenario has no html
 data_catalogues = [Path(r"/mnt/c/Users/santjer/OneDrive - Stichting Deltares/Documents/DestinE/Technical/01_FloodAdapt/deltares_data_wsl.yml")]
 
-# database_path = Path(fr"C:\Users\santjer\OneDrive - Stichting Deltares\Documents\DestinE\Technical\01_FloodAdapt\{name_overall}_visualisation\{name_overall}")
-database_path = Path(fr"C:\Users\santjer\OneDrive - Stichting Deltares\Documents\DestinE\Technical\01_FloodAdapt\{name_overall}")
+# db_path = Path(fr"C:\Users\santjer\OneDrive - Stichting Deltares\Documents\DestinE\Technical\01_FloodAdapt\{name_overall}_visualisation\{name_overall}")
+db_path = Path(fr"C:\Users\santjer\OneDrive - Stichting Deltares\Documents\DestinE\Technical\01_FloodAdapt\{name_overall}")
 
 hti = Html2Image('edge') # Specify preferred browser for metrics visualisation; 'chrome' and 'edge' are supported
 ########################################################################################################################
 
-# fiat_path = database_path/"output"/"Scenarios"/scenario/"Impacts"/"fiat_model" 
-fiat_path = database_path/"output"/"scenarios"/scenario/"Impacts"/"fiat_model" 
-floodmap_path = database_path / "output" / "Scenarios" / scenario / "Flooding" / f"FloodMap_{scenario}.tif"
+# fiat_path = db_path/"output"/"Scenarios"/scenario/"Impacts"/"fiat_model" 
+fiat_path = db_path/"output"/"scenarios"/scenario/"Impacts"/"fiat_model" 
+floodmap_path = db_path / "output" / "scenarios" / scenario / "Flooding" / f"FloodMap_{scenario}.tif"
 fiat_output_path = fiat_path/"output"/"spatial.gpkg"
-metrics_html_path = database_path /"output"/"Scenarios"/scenario/f"{scenario}_metrics.html"
+metrics_html_path = db_path /"output"/"scenarios"/scenario/f"{scenario}_metrics.html"
 
+db = read_database(database_path = db_path.parent, site_name=db_path.stem)
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 
 ##############################################################################################
 ######################################## DEMONSTRATOR ########################################
@@ -100,17 +129,17 @@ def update_draw_tools_none():
     draw_control.on_draw(handle_draw)
     m.add_control(draw_control)
 
-############################################## TAB 1 ##############################################
+############################################## TAB EVENT ##############################################
 
 def save_inputs(event_name, start_date, end_date):
     global event_dict
     event_dict["name"] = event_name
     event_dict["start_time"] = start_date.strftime('%Y-%m-%d %H:%M:%S')
     event_dict["end_time"] = end_date.strftime('%Y-%m-%d %H:%M:%S')
-    event_dict["data_catalogues"] = 'MISSING'
-    event_dict["sfincs_forcing"] = {'meteo': 'MISSING', 'waterlevel': 'MISSING'}
+    event_dict["data_catalogues"] = ''
+    event_dict["sfincs_forcing"] = {'meteo': '', 'waterlevel': ''}
 
-############################################## TAB 2 ##############################################
+############################################## TAB PROJECTIONS ##############################################
 
 def save_inputs_projections():
         global proj_dict
@@ -120,7 +149,7 @@ def save_inputs_projections():
         proj_dict["socio_economic_change"] = {'population_growth_existing': POP_input.value,
                                             'economic_growth': ECON_input.value}
 
-############################################## TAB 3 ##############################################
+############################################## TAB STRATEGY & MEASURES ##############################################
 
 def clear_all_drawn_geometries():
     global draw_control
@@ -264,29 +293,143 @@ def save_strategy():
     save_current_add_new()
     save_all_measures()
 
-############################################## TAB 4 ##############################################
-def initialise_scenario():
+############################################## TAB SCENARIO ##############################################
+scenarioName = solara.reactive("Scenario Name")
+
+try:
+    if event_dict and 'name' in event_dict:
+        all_events = [event_dict['name']] + get_events()["name"]
+    else:
+        all_events = get_events()["name"]
+except NameError:
+    all_events = get_events()["name"]
+selected_event = solara.reactive(all_events[0])
+
+
+try:
+    if proj_dict and 'name' in proj_dict:
+        all_projections = [proj_dict['name']] + get_projections()["name"] 
+    else:
+        all_projections = get_projections()["name"] 
+except NameError:
+    all_projections = get_projections()["name"]
+selected_projection = solara.reactive(all_projections[0])
+
+
+try:
+    if strategy and 'name' in strategy:
+        all_strategies = [strategy['name']] + get_strategies()["name"]
+    else:
+        all_strategies = get_strategies()["name"] 
+except NameError:
+    all_strategies = get_strategies()["name"] 
+selected_strategy = solara.reactive(all_strategies[0])
+
+
+def flatten_toml(toml_data_event, parent_key="", separator="."):
+    flattened_dict = {}
+    for key, value in toml_data_event.items():
+        full_key = f"{parent_key}{separator}{key}" if parent_key else key
+        if isinstance(value, dict):
+            flattened_dict.update(flatten_toml(value, full_key, separator))
+        else:
+            flattened_dict[full_key] = value
+    return flattened_dict
+
+# EVENTS
+def toml_to_event_dict(toml_path_event):
+    with open(toml_path_event, "rb") as f:
+        toml_data_event = tomli.load(f)
+    flat_data = flatten_toml(toml_data_event)
+    event_dict_select = {}
+    for key, value in flat_data.items():
+        parts = key.split(".")
+        if len(parts) == 1:
+            event_dict_select[parts[0]] = value
+        else:
+            current = event_dict_select
+            for part in parts[:-1]:
+                if part not in current:
+                    current[part] = {}
+                current = current[part]
+            current[parts[-1]] = value
+    return event_dict_select
+
+def handle_event_selection(selected_event):
+    global event_dict_select
+    if selected_event.value in get_events()["name"]: # selected_event == event_dict['name']:
+        toml_path_event = db_path / "input" / "events" / selected_event.value / f"{selected_event.value}.toml"
+        event_dict_select = toml_to_event_dict(toml_path_event)
+    else:
+        event_dict_select = event_dict
+
+
+# PROJECTIONS
+def toml_to_proj_dict(toml_path_projection):
+    with open(toml_path_projection, "rb") as f:
+        toml_data_proj = tomli.load(f)
+    flat_data = flatten_toml(toml_data_proj)
+    proj_dict_select = {}
+    for key, value in flat_data.items():
+        parts = key.split(".")
+        proj_dict_select[parts[0]] = value
+    return proj_dict_select
+
+def handle_projection_selection(selected_projection):
+    global projection_dict_select
+    if selected_projection.value in get_projections()["name"]: # == proj_dict['name']:
+        toml_path_projection = db_path / "input" / "Projections" / selected_projection.value / f"{selected_projection.value}.toml"
+        projection_dict_select = toml_to_proj_dict(toml_path_projection)
+    else:
+        projection_dict_select = proj_dict
+
+        
+# STRATEGIES
+def toml_to_strategy_dict(toml_path_strategy):
+    with open(toml_path_strategy, "rb") as f:
+        toml_data_strategy = tomli.load(f)
+    flat_data = flatten_toml(toml_data_strategy)
+    strategy_dict_select = {}
+    for key, value in flat_data.items():
+        parts = key.split(".")
+        strategy_dict_select[parts[0]] = value
+    return strategy_dict_select
+
+def handle_strategy_selection(selected_strategy):
+    global strategy_dict_select
+    if selected_strategy.value in get_strategies()["name"]:# == strategy['name']:
+        toml_path_strategy = db_path / "input" / "Strategies" / selected_strategy.value / f"{selected_strategy.value}.toml"
+        strategy_dict_select = toml_to_strategy_dict(toml_path_strategy)
+    else:
+        strategy_dict_select = strategy
+
+# SCENARIO
+def initialise_scenario(selected_event, selected_projection, selected_strategy):
+    handle_event_selection(selected_event)
+    handle_projection_selection(selected_projection)
+    handle_strategy_selection(selected_strategy)
     global scenario
     scenario = {
         'name': scenarioName.value, # "test_scenario",
-        'event': event_dict,
-        'projection': proj_dict,
-        'strategy': strategy,
+        'event': event_dict_select, # selected_event.value, # event_dict,
+        'projection': projection_dict_select, # proj_dict,
+        'strategy': strategy_dict_select, # strategy,
     }
 
-def save_and_run():
-    initialise_scenario()
-
-    scenario_fn = database_path / f"{scenario['name']}_toplevel.toml" # fa_database
+############################################## TAB SAVE ##############################################
+def save():
+    scenario_fn = db_path / f"{scenario['name']}_toplevel.toml" # fa_database
     with open(scenario_fn, 'wb+') as f:
             tomli_w.dump(scenario, f)
 
-    database_fn = Path.cwd()
+
+############################################## TAB RUN ##############################################
+def run():
     scenario_name = scenarioName.value
     create_workflow_config(database_fn, scenario_name)     # NOT SUCCESSFUL!!! ###############################################################
     run_fa_scenario_workflow(database_fn, scenario_name)   # NOT SUCCESSFUL!!! ###############################################################
 
-############################################## TAB 5  ##############################################
+############################################## TAB VISUALISATION  ##############################################
 
 def on_checkbox_change(checkbox_id):
     if checkbox_id == 1:
@@ -320,7 +463,7 @@ def on_checkbox_change(checkbox_id):
         mapchoice4.set(False)
         selected_view.set(None)
         
-# show_waiting = solara.reactive(False) #######################################..................... REMOVE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<
+
 def map1():
     if os.path.exists("temp_floodmap.tiff"):
         os.remove("temp_floodmap.tiff")
@@ -375,10 +518,15 @@ def map4():
     hti.screenshot(html_str=html_content, save_as="metrics_image.png")   
     solara.Image("metrics_image.png")
 
-##################################################################################################
-##################################################################################################
-##################################################################################################
 
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 
 polyline_coordinates = solara.reactive([])
 polygon_coordinates = solara.reactive([])
@@ -411,7 +559,7 @@ map_output = Output()
 with map_output:
     display(m)
 
-####################################### TAB 1 WEATHER EVENT #######################################
+####################################### TAB WEATHER EVENT #######################################
 event_dict = {}
 
 @solara.component
@@ -437,7 +585,7 @@ def TabEvent():
         solara.Button("Save Inputs", on_click=lambda: save_inputs(eventName.value, start_date.value, end_date.value))
 
 
-####################################### TAB 2 PROJECTIONS #######################################
+####################################### TAB PROJECTIONS #######################################
 SLR_input = solara.reactive(0.0)
 RAIN_input = solara.reactive(0.0)
 POP_input = solara.reactive(0.0)
@@ -459,7 +607,7 @@ def TabProjections():
         
         solara.Button("Save Inputs", on_click=save_inputs_projections, style={"margin-top": "20px"})
 
-####################################### TAB 3 MEASURES #######################################
+####################################### TAB MEASURES/STRATEGY #######################################
 strategyName = solara.reactive("Strategy Name")
 measureName = solara.reactive("Measure Name")
 measure_types = ["Floodwall","Pump","Water square","Green infrastructure","Water storage",
@@ -478,7 +626,7 @@ elevation_fpprop = solara.reactive(0)  # For floodproof properties
 strategy = {} 
 
 @solara.component
-def TabMeasures(): 
+def TabStrategy(): 
     with solara.Card("Strategy Name", style={"width": "100%", "padding": "10px"}):
         solara.InputText("Strategy Name", value=strategyName, continuous_update=True)
         
@@ -533,22 +681,45 @@ def TabMeasures():
             solara.Button("Clear All", on_click=clear_measures, style={"margin-top": "80px", "margin-left": "-348px"})
             solara.Button("Save Strategy", on_click=save_strategy, style={"margin-top": "80px", "margin-left": "54px"})
 
-
-####################################### TAB 4 SAVE #######################################
+####################################### TAB SCENARIO #######################################
 scenarioName = solara.reactive("Scenario Name")
-
 @solara.component
-def TabSaveRun():
+def TabScenario():
+    update_draw_tools_none() 
+
+    with solara.Card("Initialise Scenario", style={"width": "100%", "padding": "10px"}):
+        solara.InputText("Scenario Name", value=scenarioName, continuous_update=True)
+        solara.Markdown(f"**Your Scenario Name**: {scenarioName.value}")
+        with solara.Row(gap="10px"):
+            solara.Select(label="Select Event", value=selected_event, values=all_events)
+        with solara.Row(gap="10px"):
+            solara.Select(label="Select Projection", value=selected_projection, values=all_projections)
+        with solara.Row(gap="10px"):
+            solara.Select(label="Select Strategy", value=selected_strategy, values=all_strategies)
+        solara.Button("Initialise Scenario", on_click=lambda: initialise_scenario(selected_event, selected_projection, selected_strategy)) 
+
+
+####################################### TAB SAVE #######################################
+@solara.component
+def TabSave():
     update_draw_tools_none() 
 
     with solara.Card("Save inputs and Run model", style={"width": "100%", "padding": "10px"}):
-        solara.InputText("Scenario Name", value=scenarioName, continuous_update=True)
+        # solara.InputText("Scenario Name", value=scenarioName, continuous_update=True)
         solara.Markdown(f"**Your Scenario Name**: {scenarioName.value}")
-        solara.Markdown(f"<span style='color: #FF4500;'><b>Note to be removed later:</b> save_and_run not successful: error in two functions </span>")
+        solara.Button("Save", on_click=lambda: save()) 
 
-        solara.Button("Save & Run", on_click=lambda: save_and_run()) 
+####################################### TAB RUN #######################################
+@solara.component
+def TabRun():
+    update_draw_tools_none() 
 
-####################################### TAB 5 MAP VISUALISATION #######################################
+    with solara.Card("Save inputs and Run model", style={"width": "100%", "padding": "10px"}):
+        solara.Markdown("**Run Scenario:**")
+        solara.Button("Run", on_click=lambda: run()) 
+
+
+####################################### TAB VISUALISATION #######################################
 mapchoice1 = solara.reactive(False)
 mapchoice2 = solara.reactive(False)
 mapchoice3 = solara.reactive(False)
@@ -556,7 +727,7 @@ mapchoice4 = solara.reactive(False)
 selected_view = solara.reactive(None)  
 
 @solara.component
-def TabMapVisualisation():
+def TabVisualisation():
     update_draw_tools_none()
     with solara.Card("Map Visualisation", style={"width": "100%", "padding": "10px"}):
         solara.Markdown(f"<span style='color: #4682B4;'><b>Please Note:</b> The  generation of figures may take some seconds.</span>")
@@ -577,24 +748,31 @@ def TabMapVisualisation():
 @solara.component
 def SettingsTabs():
     with solara.Column(style={"width": "100%", "align-items": "center"}):
-        with solara.Row(gap="10px", style={"justify-content": "space-between", "width": "80%"}):
+        with solara.Row(gap="10px", style={"justify-content": "flex-start", "width": "80%"}):
             solara.Button("Event", on_click=lambda: (selected_tab.set('Event'), selected_view.set(None)))
             solara.Button("Projections", on_click=lambda: (selected_tab.set('Projections'), selected_view.set(None)))
-            solara.Button("Measures", on_click=lambda: (selected_tab.set('Measures'), selected_view.set(None)))
-        with solara.Row(gap="10px", style={"justify-content": "space-between", "width": "80%"}):
-            solara.Button("Save & Run", on_click=lambda: (selected_tab.set('TabSaveRun'), selected_view.set(None)))
-            solara.Button("Visualise Maps", on_click=lambda: selected_tab.set('TabMapVisualisation'))
+            solara.Button("Strategy", on_click=lambda: (selected_tab.set('Strategy'), selected_view.set(None)))
+        with solara.Row(gap="10px", style={"justify-content": "flex-start", "width": "80%"}):
+            solara.Button("Scenario", on_click=lambda: (selected_tab.set('Scenario'), selected_view.set(None)))
+            solara.Button("Save", on_click=lambda: (selected_tab.set('Save'), selected_view.set(None)))
+            solara.Button("Run", on_click=lambda: (selected_tab.set('Run'), selected_view.set(None)))
+        with solara.Row(gap="10px", style={"justify-content": "flex-start", "width": "80%"}):
+            solara.Button("Visualisation", on_click=lambda: selected_tab.set('Visualisation'))
  
     if selected_tab.value == 'Event':
         TabEvent()
     elif selected_tab.value == 'Projections':
         TabProjections()
-    elif selected_tab.value == 'Measures':
-        TabMeasures()
-    elif selected_tab.value == 'TabSaveRun':
-        TabSaveRun()
-    elif selected_tab.value == 'TabMapVisualisation':
-        TabMapVisualisation()
+    elif selected_tab.value == 'Strategy':
+        TabStrategy()
+    elif selected_tab.value == 'Scenario':
+        TabScenario()
+    elif selected_tab.value == 'Save':
+        TabSave()
+    elif selected_tab.value == 'Run':
+        TabRun()
+    elif selected_tab.value == 'Visualisation':
+        TabVisualisation()
         mapchoice1.set(False); mapchoice2.set(False); mapchoice3.set(False)
 
 @solara.component
@@ -615,5 +793,5 @@ def Page():
         with solara.Column(style={"width": "30%", "min-width": "500px"}):
             SettingsTabs()
 
-
 Page()
+
