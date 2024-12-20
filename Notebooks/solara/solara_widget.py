@@ -11,12 +11,9 @@ import os
 import tomli_w
 import tomli
 
-# from DT_flood.utils.workflow_utils import create_workflow_config, run_fa_scenario_workflow # , run_scenario
-
 import logging
 logging.getLogger('reacton').disabled = True
 
-# for visualisation
 import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
@@ -27,16 +24,11 @@ import cartopy.crs as ccrs
 import geopandas as gpd
 matplotlib.use('Agg')
 
-# FLOODMAP
 from localtileserver import TileClient
-
 
 proj = ccrs.PlateCarree()
 
-
 from html2image import Html2Image
-
-
 
 from flood_adapt.api.static import read_database
 # from flood_adapt.config import Settings
