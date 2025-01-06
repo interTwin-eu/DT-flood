@@ -13,16 +13,16 @@ inputs:
     type: string
   token:
     type: string
-  # service_wflow:
-  #   type: string
-  # service_sfincs:
-  #   type: string
+  service_wflow:
+    type: string
+  service_sfincs:
+    type: string
   service_ra2ce:
     type: string
-  # filename_wflow:
-  #   type: Directory
-  # filename_sfincs:
-  #   type: Directory
+  filename_wflow:
+    type: Directory
+  filename_sfincs:
+    type: Directory
   filename_ra2ce:
     type: Directory
   oscar_service:
@@ -37,28 +37,28 @@ outputs:
       items: [File, Directory, string]
       
 steps:
-  # wflow:
-  #   run: oscar_workflow/oscar.cwl
-  #   in:
-  #     oscar_script: oscar_script
-  #     endpoint: endpoint
-  #     token: token
-  #     service: service_wflow
-  #     filename: filename_wflow
-  #     oscar_service: oscar_service
-  #     output: output
-  #   out: [fa_database_out]
-  # sfincs:
-  #   run: oscar_workflow/oscar.cwl  
-  #   in:
-  #     oscar_script: oscar_script
-  #     endpoint: endpoint
-  #     token: token
-  #     service: service_sfincs
-  #     filename: filename_sfincs
-  #     oscar_service: oscar_service
-  #     output: output
-  #   out: [fa_database_out]
+  wflow:
+    run: oscar_workflow/oscar.cwl
+    in:
+      oscar_script: oscar_script
+      endpoint: endpoint
+      token: token
+      service: service_wflow
+      filename: filename_wflow
+      oscar_service: oscar_service
+      output: output
+    out: [fa_database_out]
+  sfincs:
+    run: oscar_workflow/oscar.cwl  
+    in:
+      oscar_script: oscar_script
+      endpoint: endpoint
+      token: token
+      service: service_sfincs
+      filename: filename_sfincs
+      oscar_service: oscar_service
+      output: output
+    out: [fa_database_out]
   ra2ce:
     run: oscar_workflow/oscar.cwl
     in:
