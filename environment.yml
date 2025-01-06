@@ -12,6 +12,8 @@ dependencies:
   - delft_fiat=0.1.1
   - folium
   - ipykernel
+  - numpy
+  - numexpr
   # - hydromt_wflow
   - mapclassify
   - pandas<2.0
