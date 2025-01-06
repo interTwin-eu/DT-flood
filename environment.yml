@@ -14,5 +14,5 @@ dependencies:
   - pip: 
     - jupyter
     # - git+https://github.com/Deltares-research/FloodAdapt.git@6a18711
-    - git+https://github.com/Deltares-research/FloodAdapt.git@41a0a68
+    # - git+https://github.com/Deltares-research/FloodAdapt.git@41a0a68
     - gwwapi

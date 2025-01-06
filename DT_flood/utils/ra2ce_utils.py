@@ -21,14 +21,13 @@ def setup_base_folder(root: os.PathLike) -> None:
     output_folder = root/"output"
     output_folder.mkdir(parents=True, exist_ok=True)
 
-def setup_ra2ce(database: os.PathLike) -> None:
+def setup_ra2ce(ra2ce_root: os.PathLike) -> None:
 
-    ra2ce_folder = database/"static"/"templates"/"ra2ce"
     utils_path = Path(__file__).parents[1]/"workflows"/"pyscripts"/"utils_ra2ce_docker.py"
     script_path = Path(__file__).parent/"setup_ra2ce.py"
 
     cmd = f"""
-        docker run -v {str(ra2ce_folder)}:/home/mambauser/project/ra2ce \
+        docker run -v {str(ra2ce_root)}:/home/mambauser/project/ra2ce \
         -v {str(utils_path)}:/home/mambauser/project/utils_ra2ce_docker.py \
         -v {str(script_path)}:/home/mambauser/project/setup_ra2ce.py \
         containers.deltares.nl/ra2ce/ra2ce:latest \
