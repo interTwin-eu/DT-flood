@@ -7,12 +7,13 @@ requirements:
     InlineJavascriptRequirement: {}
     InitialWorkDirRequirement:
         listing:    
-            - $(inputs.pyscript)
-            - $(inputs.fa_database)
-    EnvVarRequirement:
-        envDef:
-            GDAL_DATA: /home/wotromp/miniforge3/envs/DT-flood/share/gdal
-            PROJ_LIB: /home/wotromp/miniforge3/envs/DT-flood/share/proj
+            - entry: $(inputs.pyscript)
+            - entry: $(inputs.fa_database)
+              writable: true
+
+hints:
+    DockerRequirement:
+        dockerPull: containers.deltares.nl/ra2ce/ra2ce:latest
 
 inputs:
     pyscript:
@@ -27,7 +28,7 @@ inputs:
         type: string
         inputBinding:
             position: 3
-
+            
 outputs:
     fa_database_out:
         type: Directory

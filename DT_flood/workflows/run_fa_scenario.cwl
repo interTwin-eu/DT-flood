@@ -7,13 +7,16 @@ requirements:
 inputs:
     fa_database: Directory
     scenario: string
-    # data_catalog: File
     script_init: File
     script_update_wflow: File
     script_update_sfincs: File
+    script_postprocess_sfincs: File
     script_arrange: File
     script_update_fiat: File
     script_run_fiat: File
+    script_update_ra2ce: File
+    script_run_ra2ce: File
+    script_utils_ra2ce_docker: File
     oscar_script: File
     endpoint: string
     user: string
@@ -23,10 +26,12 @@ inputs:
     oscar_service: Directory
     output: Directory
 outputs:
-    fa_database_out:
+    fiat_out:
         type: Directory
-        # outputSource: update_fiat/fa_database_out
         outputSource: run_fiat/fa_database_out
+    ra2ce_out:
+        type: Directory
+        outputSource: run_ra2ce/fa_database_out
 
 
 steps:
@@ -43,7 +48,6 @@ steps:
         in:
             fa_database: init_scenario/fa_database_out
             scenario: scenario
-            # data_catalog: data_catalog
             wflow_update_script: script_update_wflow
             oscar_script: oscar_script
             endpoint: endpoint
@@ -63,27 +67,31 @@ steps:
             fa_database: run_wflow/fa_database_out
             scenario: scenario
             sfincs_update_script: script_update_sfincs
+            sfincs_postprocess_script: script_postprocess_sfincs
             arrange_script: script_arrange
         out:
             [fa_database_out]
         run:
             ./cwl/fa_sfincs_workflow_docker.cwl
-    update_fiat:
+    run_fiat:
         in:
             fa_database: run_sfincs/fa_database_out
             scenario: scenario
-            pyscript: script_update_fiat
+            fiat_update_script: script_update_fiat
+            fiat_run_script: script_run_fiat
         out:
             [fa_database_out]
         run:
-            ./cwl/update_fiat.cwl
-    run_fiat:
+            ./cwl/fa_fiat_workflow.cwl
+    run_ra2ce:
         in:
-            fa_database: update_fiat/fa_database_out
+            fa_database: run_sfincs/fa_database_out
             scenario: scenario
-            pyscript: script_run_fiat
+            update_script: script_update_ra2ce
+            run_script: script_run_ra2ce
+            utils_script_docker: script_utils_ra2ce_docker
         out:
             [fa_database_out]
         run:
-            ./cwl/run_fiat.cwl
+            ./cwl/fa_ra2ce_workflow.cwl
 
