@@ -7,8 +7,9 @@ requirements:
     InlineJavascriptRequirement: {}
     InitialWorkDirRequirement:
         listing:
-            - $(inputs.pyscript)
-            - $(inputs.fa_database)
+            - entry: $(inputs.pyscript)
+            - entry: $(inputs.fa_database)
+              writable: true
 
 inputs:
     pyscript:
