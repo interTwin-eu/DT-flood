@@ -1,0 +1,20 @@
+oscar_script:
+  class: File
+  path: oscar_workflow/oscar.py
+endpoint: 
+token: 
+service_wflow: wflow
+service_sfincs: sfincs
+filename_wflow:
+  class: Directory
+  path: wflow_input
+filename_sfincs:
+  class: Directory
+  path: sfincs_input
+oscar_service:
+  class: Directory
+  path: oscar_services
+
+output:
+  class: Directory
+  path: output

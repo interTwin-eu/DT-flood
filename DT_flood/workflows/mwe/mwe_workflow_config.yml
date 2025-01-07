@@ -1,0 +1,11 @@
+fa_database:
+  class: Directory
+  path: /home/wotromp/InterTwin/FloodAdapt_database/Humber
+scenario: test_scenario
+minio_path: deltares-bucket/deltares/FloodAdapt_database/Humber
+script_init:
+  class: File
+  path: /mnt/c/Repositories/DT-flood/DT_flood/workflows/pyscripts/init_fa_database.py
+script_update_wflow:
+  class: File
+  path: /mnt/c/Repositories/DT-flood/DT_flood/workflows/pyscripts/update_wflow.py

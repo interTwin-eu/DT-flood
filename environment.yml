@@ -7,12 +7,16 @@ channels:
 dependencies:
   - cartopy
   - cwltool
+  - dask=2024.6.0
   - ipykernel
   - hydromt_wflow
+  - pandas>2.0.0
   - python<3.12
   - pip
-  - pip: 
+  - pip:
     - jupyter
-    # - git+https://github.com/Deltares-research/FloodAdapt.git@6a18711
-    # - git+https://github.com/Deltares-research/FloodAdapt.git@41a0a68
+    - git+https://github.com/Deltares-research/FloodAdapt.git
     - gwwapi
+    - liboidcagent
+    - minio
+    - oscar-python

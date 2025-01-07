@@ -1,5 +1,17 @@
-DT_flood/workflows/deltares_sfincs-cpu:sfincs-v2.0.3-Cauberg.sfincs
-DT_flood/workflows/deltares_wflow:v0.7.3.sif
+# *
+# !running_the_notebooks/
+# !Notebooks/ConfigureFullScenario.ipynb
+# !Notebooks/SetupFIAT.ipynb
+# !Notebooks/SetupSFINCS.ipynb
+# !Notebooks/SetupSite.ipynb
+# !Notebooks/SetupWFlow.ipynb
+# !Notebooks/VisualizeScenario.ipynb
+cache/
+tmp/
 
-**/__pycache__
+__pycache__/
+*.py[cod]
+
+.vscode/
+
 **/cache

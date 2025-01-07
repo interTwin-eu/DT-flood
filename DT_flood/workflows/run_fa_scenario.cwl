@@ -17,7 +17,14 @@ inputs:
     script_update_ra2ce: File
     script_run_ra2ce: File
     script_utils_ra2ce_docker: File
-
+    oscar_script: File
+    endpoint: string
+    user: string
+    password: string
+    service: string
+    filename: Directory
+    oscar_service: Directory
+    output: Directory
 outputs:
     fiat_out:
         type: Directory
@@ -42,6 +49,14 @@ steps:
             fa_database: init_scenario/fa_database_out
             scenario: scenario
             wflow_update_script: script_update_wflow
+            oscar_script: oscar_script
+            endpoint: endpoint
+            user: user
+            password: password
+            service: service
+            filename: filename
+            oscar_service: oscar_service
+            output: output
         out:
             [fa_database_out]
         run:

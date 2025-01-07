@@ -1,0 +1,22 @@
+functions:
+  oscar:
+  - cluster-id:
+      name: wflow-interlink
+      cpu: '4.0'
+      memory: 6Gi
+      image: docker://deltares/wflow:v0.7.3
+      script: wflow_interlink_script.sh
+      interlink_node_name: vega-new-vk
+      annotations:
+        slurm-job.vk.io/singularity-options: --no-home --no-mount /exa5
+        slurm-job.vk.io/singularity-mounts:  --bind /ceph/hpc/home/ciangottinid/oscar_home:/tmp
+        slurm-job.vk.io/pre-exec: mkdir -p  /ceph/hpc/home/ciangottinid/oscar_home
+        job.vk.io/singularity-mounts: --bind /ceph/hpc/data/st2301-itwin-users/:/interlink/
+        slurm-job.vk.io/flags: --job-name=test-wflow --time=02:30:00   --nodes=1
+      log_level: DEBUG   # To avoid supervisor logs in response
+      input:
+      - storage_provider: minio
+        path: wflowinterlink/in
+      output:
+      - storage_provider: minio
+        path: wflowinterlink/out
