@@ -1,0 +1,43 @@
+fa_database:
+  class: Directory
+  path: "../FloodAdapt_database/Humber/"
+scenario: "Empty_Event_current_no_measures"
+data_catalog:
+  class: File
+  path: "/home/wotromp/DestinE_workflows/deltares_data_wsl.yml"
+script_init:
+  class: File
+  path: "./pyscripts/init_fa_database.py"
+script_update_wflow:
+  class: File
+  path: "./pyscripts/update_wflow.py"
+script_update_sfincs:
+  class: File
+  path: "./pyscripts/update_sfincs.py"
+script_arrange:
+  class: File
+  path: "./pyscripts/arrange_fa_folders.py"
+script_update_fiat:
+  class: File
+  path: "./pyscripts/update_fiat.py"
+script_run_fiat:
+  class: File
+  path: "./pyscripts/run_fiat.py"
+
+
+oscar_script:
+  class: File
+  path: cwl_OSCAR/oscar_workflow/oscar.py
+endpoint: 
+user: 
+password: 
+service: wflow
+filename:
+  class: Directory
+  path: cwl_OSCAR/wflow_input
+oscar_service:
+  class: Directory
+  path: cwl_OSCAR/services
+output:
+  class: Directory
+  path: cwl_OSCAR/output

@@ -1,0 +1,13 @@
+update_script:
+  class: File
+  path: "../pyscripts/update_ra2ce.py"
+run_script:
+  class: File
+  path: "../pyscripts/run_ra2ce.py"
+fa_database:
+  class: Directory
+  path: "/home/wotromp/InterTwin/FloodAdapt_database/Humber"
+scenario: "Empty_Event_current_no_measures"
+utils_script:
+  class: File
+  path: "../../utils/ra2ce_utils_docker.py"
