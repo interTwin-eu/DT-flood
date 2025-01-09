@@ -10,6 +10,8 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--endpoint")
 parser.add_argument("--filename")
+parser.add_argument("--user")
+parser.add_argument("--password")
 parser.add_argument("--token")
 parser.add_argument("--service")
 parser.add_argument("--service_directory")
@@ -21,6 +23,8 @@ variables = vars(args)
 
 endpoint = variables['endpoint']
 filename = variables['filename']
+user = variables['user']
+password = variables['password']
 token = variables['token']
 service = variables['service']
 service_directory = variables['service_directory']
@@ -30,10 +34,23 @@ output = variables['output']
 def check_oscar_connection():
     # Check the service or create it
     print("Checking OSCAR connection status")
-    options_basic_auth = {'cluster_id':'cluster-id',
-                    'endpoint': endpoint,
-                    'oidc_token': token,                
-                    'ssl': 'True'}
+    if user and password:
+        options_basic_auth = {'cluster_id':'cluster-id',
+                            'endpoint': endpoint,
+                            'user': user, 
+                            'password': password,               
+                            'ssl': 'True'}
+        print("Using credentials user/password")
+    elif token:
+        options_basic_auth = {'cluster_id':'cluster-id',
+                        'endpoint': endpoint,
+                        'oidc_token': token,
+                        'ssl': 'True'}
+        print("Using credentials token")
+    else:
+        print("Introduce the credentials user/password or token")
+        exit(2)
+
 
     client = Client(options = options_basic_auth)
     try:
@@ -64,8 +81,10 @@ def check_service(client,service,service_directory):
                                 oscar_service_directory + "_script.sh") 
         with open(oscar_service_directory + "_tmp.yaml", 'w') as file: 
             file.write(data) 
-
-        creation = client.create_service(oscar_service_directory + "_tmp.yaml")
+        try:
+            creation = client.create_service(oscar_service_directory + "_tmp.yaml")
+        except Exception as err:
+            print(err)
         os.remove(oscar_service_directory + "_tmp.yaml") 
         service_info = client.get_service(service)
         minio_info = json.loads(service_info.text)["storage_providers"]["minio"]["default"]

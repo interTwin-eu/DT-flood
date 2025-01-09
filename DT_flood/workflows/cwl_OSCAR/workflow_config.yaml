@@ -2,6 +2,8 @@ oscar_script:
   class: File
   path: oscar_workflow/oscar.py
 endpoint: 
+user: ""
+password: ""
 token: 
 service_wflow: wflow
 service_sfincs: sfincs
