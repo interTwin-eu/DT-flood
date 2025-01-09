@@ -122,7 +122,7 @@ def plot_sfincs_model(sf):
     """
     proj = ccrs.PlateCarree()
     bzs_points = gpd.GeoDataFrame({"index": sf.forcing['bzs'].index, "geometry": sf.forcing['bzs'].geometry}, crs=sf.crs).to_crs("EPSG:4326")
-    dis_points = gpd.GeoDataFrame({"index": sf.forcing['dis'].index, "geometry": sf.forcing['dis'].geometry}, crs=sf.crs).to_crs("EPSG:4326")
+    # dis_points = gpd.GeoDataFrame({"index": sf.forcing['dis'].index, "geometry": sf.forcing['dis'].geometry}, crs=sf.crs).to_crs("EPSG:4326")
 
     vmin, vmax = sf.grid['dep'].raster.mask_nodata().quantile([0, 0.98]).values
     c_dem = plt.cm.terrain(np.linspace(0.25,1,int(vmax)))
@@ -136,10 +136,10 @@ def plot_sfincs_model(sf):
     ax.add_image(cimgt.OSM(),10, interpolation='bilinear', alpha=0.5)
 
     sf.grid.rio.reproject("EPSG:4326")['dep'].plot(ax=ax, cmap=cmap, norm=norm, cbar_kwargs={"shrink": 0.85, "label": 'DEM [m]', "pad": 0.03})
-    sf.geoms['obs'].to_crs('EPSG:4326').plot(ax=ax, marker="d", facecolor='w', edgecolor='r', markersize=60, label="obs points", zorder=10)
-    sf.geoms['rivers_inflow'].to_crs("EPSG:4326").plot(ax=ax, color='darkblue', label="Rivers")
+    # sf.geoms['obs'].to_crs('EPSG:4326').plot(ax=ax, marker="d", facecolor='w', edgecolor='r', markersize=60, label="obs points", zorder=10)
+    # sf.geoms['rivers_inflow'].to_crs("EPSG:4326").plot(ax=ax, color='darkblue', label="Rivers")
     bzs_points.plot(ax=ax, marker="^", facecolor='w', edgecolor='k', markersize=60, label="bzs points", zorder=10)
-    dis_points.plot(ax=ax, marker=">", facecolor='w', edgecolor='k', markersize=60, label="dis points", zorder=10)
+    # dis_points.plot(ax=ax, marker=">", facecolor='w', edgecolor='k', markersize=60, label="dis points", zorder=10)
     ax.legend(
             title="Legend",
             loc= 'upper right',

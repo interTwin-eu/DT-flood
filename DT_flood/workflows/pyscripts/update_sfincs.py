@@ -2,13 +2,18 @@ from pathlib import Path
 from sys import argv
 from datetime import datetime
 from shutil import copytree
+import xarray as xr
+import pandas as pd
+import geopandas as gpd
 import tomli
 
 from hydromt.log import setuplog
-from hydromt_wflow import WflowModel
+from hydromt.exceptions import NoDataException
 from hydromt_sfincs import SfincsModel
 from hydromt_sfincs.sfincs_input import SfincsInput
 from DT_flood.utils.fa_scenario_utils import init_scenario
+from flood_adapt.api import events
+from flood_adapt.adapter.sfincs_adapter import SfincsAdapter
 
 def tree(directory):
     print(f"+ {directory}")
@@ -37,18 +42,6 @@ sfincs_out_path = scenario.results_path / "Flooding" / "simulations" / "overland
 # sfincs_path = static_path/"overland"
 sfincs_path = database.static_path / "templates" / database.site.attrs.sfincs.overland_model
 
-# with open(scenario_fn, 'rb') as f:
-#     scenario_config = tomli.load(f)
-
-print(f"FA database: \n")
-tree(Path(argv[1]))
-print(f"wflow folder: {wflow_path}")
-tree(wflow_path)
-print(f"sfincs static: {sfincs_path}")
-tree(sfincs_path)
-print(f"sfincs output path: {sfincs_out_path}")
-tree(sfincs_out_path)
-
 start_time = datetime.strptime(scenario_config['event']['start_time'],"%Y-%m-%d %H:%M:%S")
 end_time = datetime.strptime(scenario_config['event']['end_time'],"%Y-%m-%d %H:%M:%S")
 
@@ -59,11 +52,10 @@ print("Reading base SFINCS model")
 
 sf = SfincsModel(
     root=sfincs_out_path,
-    mode='r',
+    mode='r+',
     data_libs=scenario_config['event']['data_catalogues']
 )
 sf.read()
-# sf.set_root(sfincs_out_path, mode='w+')
 
 print("Set SFINCS timing and forcing")
 sf.setup_config(
@@ -74,13 +66,43 @@ sf.setup_config(
     }
 )
 
-sf.setup_waterlevel_forcing(geodataset=scenario_config['event']['sfincs_forcing']['waterlevel'],buffer=2000)
+if event.attrs.template == "Historical_nearshore":
+    sf.setup_waterlevel_forcing(geodataset=scenario_config['event']['sfincs_forcing']['waterlevel'],buffer=2000)
+elif event.attrs.template == "Historical_offshore":
+    print("Setting up overland waterlevels from offshore model outputs")
+    offshore_his_fn =  scenario.results_path/"Flooding"/"simulations"/"offshore"/"sfincs_his.nc"
+    offshore_his = xr.open_dataset(offshore_his_fn)
 
-meteo = sf.data_catalog.get_rasterdataset(scenario_config['event']['sfincs_forcing']['meteo'],geom=sf.region,time_tuple=sf.get_model_time())
+    bnd_points = gpd.GeoDataFrame(
+        geometry=gpd.points_from_xy(offshore_his['station_x'].values, offshore_his['station_y'].values),
+        crs=4326
+    )
+    timeseries = pd.DataFrame(
+        data=offshore_his['point_h'].values,
+        columns=[str(x) for x in bnd_points.index],
+        index=offshore_his.time.values
+    )
+    sf.setup_waterlevel_forcing(
+        timeseries=timeseries+scenario.direct_impacts.hazard.physical_projection.attrs.sea_level_rise.value,
+        locations=bnd_points,
+        merge=False)
+else:
+    ValueError("No valid event type")
 
-sf.setup_precip_forcing_from_grid(precip=meteo['precip'], aggregate=False)
-sf.setup_wind_forcing_from_grid(wind=meteo.rename({"wind10_u": "wind_u", "wind10_v": "wind_v"}))
-sf.setup_pressure_forcing_from_grid(press=meteo['press_msl'])
+if scenario_config['event']['sfincs_forcing']['meteo']:
+    try:
+        meteo = sf.data_catalog.get_rasterdataset(scenario_config['event']['sfincs_forcing']['meteo'],geom=sf.region.to_crs(4326),time_tuple=sf.get_model_time())
+    except NoDataException:
+        meteo = sf.data_catalog.get_rasterdataset(scenario_config['event']['sfincs_forcing']['meteo'],geom=sf.region.to_crs(4326),time_tuple=sf.get_model_time(), buffer=1)
+    except:
+        print("Failed to get SFINCS Meteo data")
+    
+    sf.setup_precip_forcing_from_grid(
+        precip=meteo['precip']
+            * (1+scenario.direct_impacts.hazard.physical_projection.attrs.rainfall_increase/100.0),
+        aggregate=False)
+else:
+    print("No overland meteo forcing specified.")
 
 print("Write SFINCS to output folder")
 sf.write_forcing()
@@ -113,3 +135,33 @@ inp = SfincsInput.from_dict(config)
 inp.write(inp_fn=sfincs_out_path/"sfincs.inp")
 
 database.shutdown()
+del sf
+
+sf_adapt = SfincsAdapter(model_root=sfincs_out_path, site=database.site)
+
+if scenario.direct_impacts.hazard.hazard_strategy.measures is not None:
+    print("Setting up overland measures")
+    for measure in scenario.direct_impacts.hazard.hazard_strategy.measures:
+        measure_path = database.measures.get_database_path().joinpath(
+            measure.attrs.name
+        )
+
+        if measure.attrs.type == "floodwall":
+            sf_adapt.add_floodwall(
+                floodwall=measure.attrs, measure_path=measure_path
+            )
+        if measure.attrs.type == "pump":
+            sf_adapt.add_pump(pump=measure.attrs, measure_apath=measure_path)
+        if (
+            measure.attrs.type == "greening"
+            or measure.attrs.type == "total_storage"
+            or measure.attrs.type == "water_square"
+        ):
+            sf_adapt.add_green_infrastructure(
+                green_infrastructure=measure.attrs,
+                measure_path=measure_path
+            )
+
+sf_adapt.write_sfincs_model(path_out=sfincs_out_path)
+
+del sf_adapt

@@ -13,5 +13,6 @@ __pycache__/
 *.py[cod]
 
 .vscode/
+.pixi/
 
 **/cache

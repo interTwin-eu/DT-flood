@@ -10,6 +10,14 @@ from flood_adapt.object_model.interface.scenarios import IScenario
 
 from .fa_scenario_utils import init_scenario, create_scenario
 
+class quoted(str):
+    pass
+
+def quoted_presenter(dumper, data):
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='"')
+yaml.add_representer(quoted, quoted_presenter)
+
+
 
 def run_scenario(
         database: Union[str, os.PathLike],
@@ -73,9 +81,10 @@ def create_workflow_config(
 
 
     config_fn = database/f"cwl_config_{scenario}.yml"
-
+    print(f"Saving cwl config to {str(config_fn)}")
+    print(f"Workflow file: {str(cwl_workflow)}")
     # Generate cwl template
-    cmd = f"cwltool --make-template {str(cwl_workflow)} > {str(config_fn)}"
+    cmd = f"cwltool --make-template \"{str(cwl_workflow)}\" > \"{str(config_fn)}\""
     subprocess.run(cmd, shell=True)
 
     with open(config_fn, 'r') as f:
@@ -84,10 +93,10 @@ def create_workflow_config(
     script_inputs = [key for key in cwl_config if 'script' in key]
     for input in script_inputs:
         path = list(script_folder.glob(f"{input.split('_', maxsplit=1)[1]}*.py"))[0]
-        cwl_config[input]["path"] = str(path)
+        cwl_config[input]["path"] = quoted(str(path))
 
     cwl_config['scenario'] = scenario
-    cwl_config["fa_database"]['path'] = str(database)
+    cwl_config["fa_database"]['path'] = quoted(str(database))
     # cwl_config["data_catalog"]['path'] = str(data_catalog)
 
     print(f"Write Config file {config_fn} to folder {config_fn}")
@@ -118,7 +127,7 @@ def run_fa_scenario_workflow(
 
     workflow_fn = Path(__file__).parents[1]/"workflows"/"run_fa_scenario.cwl"
     config_fn = database/f"cwl_config_{scenario}.yml"
-    cmd_validate = f"cwltool --validate {str(workflow_fn)} {str(config_fn)}"
+    cmd_validate = f"cwltool --validate \"{str(workflow_fn)}\" \"{str(config_fn)}\""
     print("Validating workflow")
     print(f"Running {cmd_validate}")
     result = subprocess.run(cmd_validate, shell=True)
@@ -133,3 +142,4 @@ def run_fa_scenario_workflow(
     print("Executing workflow")
     print(f"Running {cmd_run}")
     subprocess.run(cmd_run, shell=True)
+

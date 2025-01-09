@@ -8,12 +8,13 @@ inputs:
     fa_database: Directory
     scenario: string
     script_init: File
-    script_update_wflow: File
     script_update_sfincs: File
+    script_update_sfincs_offshore: File
     script_postprocess_sfincs: File
     script_arrange: File
     script_update_fiat: File
     script_run_fiat: File
+    script_postprocess_fiat: File
     script_update_ra2ce: File
     script_run_ra2ce: File
     script_utils_ra2ce_docker: File
@@ -44,31 +45,27 @@ steps:
             [fa_database_out]
         run:
             ./cwl/init_fa_scenario.cwl
-    run_wflow:
+    run_sfincs_offshore:
         in:
             fa_database: init_scenario/fa_database_out
             scenario: scenario
-            wflow_update_script: script_update_wflow
-            oscar_script: oscar_script
-            endpoint: endpoint
-            user: user
-            password: password
-            service: service
-            filename: filename
-            oscar_service: oscar_service
-            output: output
+            sfincs_update_script: script_update_sfincs_offshore
+            arrange_script: script_arrange
+            mode:
+                default: "offshore"
         out:
             [fa_database_out]
         run:
-            ./cwl/fa_wflow_workflow.cwl
-
+            ./cwl/fa_sfincs_workflow_docker.cwl
     run_sfincs:
         in:
-            fa_database: run_wflow/fa_database_out
+            fa_database: run_sfincs_offshore/fa_database_out
             scenario: scenario
             sfincs_update_script: script_update_sfincs
             sfincs_postprocess_script: script_postprocess_sfincs
             arrange_script: script_arrange
+            mode:
+                default: "overland"
         out:
             [fa_database_out]
         run:
@@ -93,5 +90,14 @@ steps:
         out:
             [fa_database_out]
         run:
-            ./cwl/fa_ra2ce_workflow.cwl
+            ./cwl/run_fiat.cwl
+    postprocess_fiat:
+        in:
+            fa_database: run_fiat/fa_database_out
+            scenario: scenario
+            pyscript: script_postprocess_fiat
+        out:
+            [fa_database_out]
+        run:
+            ./cwl/postprocess_fiat.cwl
 
