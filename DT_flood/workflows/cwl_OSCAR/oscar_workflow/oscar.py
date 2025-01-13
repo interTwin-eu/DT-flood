@@ -10,9 +10,9 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--endpoint")
 parser.add_argument("--filename")
-parser.add_argument("--user")
-parser.add_argument("--password")
-parser.add_argument("--token")
+parser.add_argument("--user", nargs="?")
+parser.add_argument("--password", nargs="?")
+parser.add_argument("--token", nargs="?")
 parser.add_argument("--service")
 parser.add_argument("--service_directory")
 parser.add_argument("--output")
@@ -23,9 +23,14 @@ variables = vars(args)
 
 endpoint = variables['endpoint']
 filename = variables['filename']
-user = variables['user']
-password = variables['password']
-token = variables['token']
+if variables['user'] and variables['password']:
+    user = variables['user']
+    password = variables['password']
+    token = None
+elif variables['token']:
+    token = variables['token']
+    user = None
+    password = None
 service = variables['service']
 service_directory = variables['service_directory']
 output = variables['output']
@@ -160,6 +165,9 @@ input_file = compress()
 client = check_oscar_connection()
 minio_info, input_info, output_info = check_service(client, service, service_directory)
 minio_client = connect_minio(minio_info)
+print(f"Minio info: {minio_info}")
+print(f"Input info: {input_info}")
+print(f"Input file: {input_file}")
 execution_id = upload_file_minio(minio_client, input_info, input_file)
 print(execution_id)
 output_file = wait_output_and_download(minio_client, output_info, execution_id)

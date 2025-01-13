@@ -72,6 +72,8 @@ steps:
     in:
       oscar_script: oscar_script
       endpoint: endpoint
+      user: user
+      password: password
       token: token
       service: service_ra2ce
       filename: filename_ra2ce
