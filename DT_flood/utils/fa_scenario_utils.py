@@ -12,13 +12,32 @@ from flood_adapt.api import projections
 from flood_adapt.api import measures
 from flood_adapt.api import strategies
 from flood_adapt.api import scenarios
-from flood_adapt.config import Settings
-from flood_adapt.object_model.interface.database import IDatabase
-from flood_adapt.object_model.interface.events import IEvent
+from flood_adapt.misc.config import Settings, UnitSystem
+from flood_adapt.dbs_classes.interface.database import IDatabase
+from flood_adapt.object_model.hazard.interface.events import IEvent
 from flood_adapt.object_model.interface.projections import IProjection
 from flood_adapt.object_model.interface.strategies import IStrategy
 from flood_adapt.object_model.interface.scenarios import IScenario
 
+def tree(directory):
+    print(f"+ {directory}")
+    for path in sorted(directory.rglob('*')):
+        depth = len(path.relative_to(directory).parts)
+        spacer = "  " * depth
+        print(f"{spacer}+ {path.name}")
+
+def create_systems_folder(database_path: Path):
+    """Create the systems folder with empty files to get around FA model executable validation."""
+
+    systems_path = database_path/"system"
+    fiat_path = systems_path/"fiat"/"fiat"
+    sfincs_path = systems_path/"sfincs"/"sfincs"
+
+    systems_path.mkdir()
+    fiat_path.parent.mkdir(parents=True)
+    fiat_path.touch()
+    sfincs_path.parent.mkdir(parents=True)
+    sfincs_path.touch()
 
 def init_scenario(database_path: Union[str, os.PathLike], scenario_config_name: str) -> tuple[IDatabase, dict]:
     """Function fetching topmost objects for configuration
@@ -45,11 +64,17 @@ def init_scenario(database_path: Union[str, os.PathLike], scenario_config_name: 
 
     scenario_path = database_path / scenario_config_name
 
+    units = UnitSystem(system = "metric")
+
+    if not (database_path/"system").exists():
+        create_systems_folder(database_path)
+
     Settings(
         database_root = database_path.parent,
         database_name = database_path.stem,
         system_folder = database_path/"system",
         delete_crashed_runs = False,
+        unit_system = units
     )
     db = static.read_database(database_path=database_path.parent, site_name=database_path.stem)
     with open(scenario_path, 'rb') as f:

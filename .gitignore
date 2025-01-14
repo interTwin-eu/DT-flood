@@ -10,7 +10,7 @@ cache/
 tmp/
 
 __pycache__/
-*.py[cod]
+**/*.py[cod]
 
 .vscode/
 .pixi/
