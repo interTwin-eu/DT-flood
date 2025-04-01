@@ -12,7 +12,5 @@ dependencies:
   - traitlets=5.14.3
   - pip
   - pip:
-    - dask-gateway
-    - eodc
     - git+https://github.com/TUW-GEO/dask-flood-mapper
     - -e .
