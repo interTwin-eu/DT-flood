@@ -11,6 +11,6 @@ authors = [
 
 dependencies = []
 
-requires-python = "==3.10"
+requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version", "description"]
