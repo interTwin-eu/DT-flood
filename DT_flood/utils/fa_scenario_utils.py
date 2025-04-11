@@ -1,8 +1,8 @@
 import tomli
 import os
+import shutil
 from typing import Union
 from pathlib import Path
-import pandas as pd
 
 from hydromt.data_catalog import DataCatalog
 
@@ -19,12 +19,36 @@ from flood_adapt.object_model.interface.projections import IProjection
 from flood_adapt.object_model.interface.strategies import IStrategy
 from flood_adapt.object_model.interface.scenarios import IScenario
 
+from flood_adapt.object_model.hazard.forcing import wind, rainfall
+
 def tree(directory):
     print(f"+ {directory}")
     for path in sorted(directory.rglob('*')):
         depth = len(path.relative_to(directory).parts)
         spacer = "  " * depth
         print(f"{spacer}+ {path.name}")
+
+def folder_structure(root: Path):
+    """Create FloodAdapt database folder structure (copied from FA database_builder)."""  
+    input_folder = root/"input"
+    static_folder = root/"static"
+
+    inputs = [
+        "events",
+        "projections",
+        "measures",
+        "strategies",
+        "scenarios",
+        "benefits"
+    ]
+    folder = ["templates"]
+
+    input_folder.mkdir()
+    for name in inputs:
+        (input_folder/name).mkdir()
+    static_folder.mkdir()
+    for name in folder:
+        (static_folder/name).mkdir()
 
 def create_systems_folder(database_path: Path):
     """Create the systems folder with empty files to get around FA model executable validation."""
@@ -33,13 +57,13 @@ def create_systems_folder(database_path: Path):
     fiat_path = systems_path/"fiat"/"fiat"
     sfincs_path = systems_path/"sfincs"/"sfincs"
 
-    systems_path.mkdir()
+    systems_path.mkdir(parents=True)
     fiat_path.parent.mkdir(parents=True)
     fiat_path.touch()
     sfincs_path.parent.mkdir(parents=True)
     sfincs_path.touch()
 
-def init_scenario(database_path: Union[str, os.PathLike], scenario_config_name: str) -> tuple[IDatabase, dict]:
+def init_scenario(database_path: Union[str, os.PathLike], scenario_name: str) -> tuple[IDatabase, dict]:
     """Function fetching topmost objects for configuration
 
     Parameters
@@ -59,10 +83,10 @@ def init_scenario(database_path: Union[str, os.PathLike], scenario_config_name: 
             Dictionary containing scenario configuration parameters
     """    
 
-    if type(database_path) == str:
+    if isinstance(database_path, str):
         database_path = Path(database_path)
 
-    scenario_path = database_path / scenario_config_name
+    scenario_path = database_path / "input" / "scenarios" / scenario_name / (scenario_name+"_toplevel.toml")
 
     units = UnitSystem(system = "metric")
 
@@ -70,11 +94,12 @@ def init_scenario(database_path: Union[str, os.PathLike], scenario_config_name: 
         create_systems_folder(database_path)
 
     Settings(
-        database_root = database_path.parent,
-        database_name = database_path.stem,
-        system_folder = database_path/"system",
-        delete_crashed_runs = False,
-        unit_system = units
+        DATABASE_ROOT=database_path.parent,
+        DATABASE_NAME=database_path.stem,
+        SYSTEM_FOLDER=database_path/"system",
+        DELETE_CRASHED_RUNS=False,
+        unit_system=units,
+        VALIDATE_ALLOWED_FORCINGS=False,
     )
     db = static.read_database(database_path=database_path.parent, site_name=database_path.stem)
     with open(scenario_path, 'rb') as f:
@@ -119,7 +144,7 @@ def create_scenario(database: IDatabase, scenario_config: dict) -> IScenario:
     scenarios_existing = scenarios.get_scenarios()
 
     # If necessary create new scenario, save it and return object, otherwise load existing and return object
-    if not scenario_config['name'] in scenarios_existing['name']:
+    if scenario_config['name'] not in scenarios_existing['name']:
         scenario_new = create_scenario_config(database, scenario_config)
         scenarios.save_scenario(scenario_new)
         return scenario_new
@@ -145,13 +170,9 @@ def create_event(database: IDatabase, scenario_config: dict) -> IEvent:
     # Load existing events
     events_existing = events.get_events()
     # If necessary create new event, save it and return object, otherwise load existing and return object
-    if not scenario_config["event"]["name"] in events_existing["name"]:
+    if scenario_config["event"]["name"] not in events_existing["name"]:
         event_new = create_event_config(database, scenario_config)
-        events.save_event_toml(event_new)
-        if event_new.attrs.tide.timeseries_file == 'placeholder.csv':
-            with open(database.input_path/'events'/event_new.attrs.name/'placeholder.csv','w') as f:
-                df = pd.DataFrame({'placeholder': [0]}, index=(['00:00:00']))
-                df.to_csv(f)
+        events.save_event(event_new)
         return event_new
     else:
         return events.get_event(scenario_config["event"]["name"])
@@ -176,71 +197,82 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
     NotImplementedError
         Only supports HistoricalNearshore event types
     """
+    units = UnitSystem("metric")
 
-    # Set event type
-    if not database.site.attrs.sfincs.offshore_model:
-        event_type = "Historical_nearshore"
-    else: 
-        event_type = "Historical_offshore"
-    
+    start_time = scenario_config["event"]["start_time"]
+    end_time = scenario_config["event"]["end_time"]
+    event_name = scenario_config["event"]["name"]
+
+    event_folder = database.base_path / "input" / "events" / event_name
+    if not event_folder.exists():
+        event_folder.mkdir(parents=True)
+
+    data_folder = database.base_path / "data" / event_name
+    if not data_folder.exists():
+        data_folder.mkdir(parents=True)
+
+    forcings = {}
+
     # Set meteo forcing type
     if scenario_config['event']['data_catalogues']:
         dc = DataCatalog(scenario_config["event"]["data_catalogues"])
-    if 'meteo' in scenario_config["event"]["sfincs_forcing"].keys():
-        wind_type = 'none'
-        rainfall_type = 'none'
 
-    elif Path(scenario_config["event"]["sfincs_forcing"]["wind"]).suffix == ".nc":
-        wind_type = 'none'
-    elif Path(scenario_config["event"]["sfincs_forcing"]["rainfall"]).suffix == ".nc":
-        rainfall_type = 'none'
+        if 'meteo' in scenario_config["event"]["sfincs_forcing"].keys():
+            meteo_key = scenario_config["event"]["sfincs_forcing"]["meteo"]
+            ds = dc.get_rasterdataset(meteo_key, time_tuple=(start_time,end_time))
+            meteo_fn = data_folder/"meteo.nc"
+            ds.to_netcdf(meteo_fn)
+            shutil.copy(meteo_fn, event_folder/"meteo.nc") 
+        if "wind" in scenario_config["event"]["sfincs_forcing"].keys():
+            wind_key = scenario_config["event"]["sfincs_forcing"]["wind"]
+            ds = dc.get_rasterdataset(wind_key, time_tuple=(start_time, end_time))
+            wind_fn = data_folder/"wind.nc"
+            ds.to_netcdf(wind_fn)
+            shutil.copy(wind_fn, event_folder/"wind.nc")
+        if "rainfall" in scenario_config["event"]["sfincs_forcing"].keys():
+            rainfall_key = scenario_config['event']['sfincs_forcing']['rainfall']
+            ds = dc.get_rasterdataset(rainfall_key, time_tuple=(start_time, end_time))
+            rain_fn = data_folder/"rainfall.nc"
+            ds.to_netcdf(rain_fn)
+            shutil.copy(rain_fn, event_folder/"rainfall.nc")
     else:
-        wind_type = 'timeseries'
-        rainfall_type = 'timeseries'
+        if 'meteo' in scenario_config["event"]["sfincs_forcing"].keys():
+            meteo_fn = scenario_config["event"]["sfincs_forcing"]["meteo"]
+            
+        if "wind" in scenario_config["event"]["sfincs_forcing"].keys():
+            wind_fn = scenario_config["event"]["sfincs_forcing"]["wind"]
 
-    wind_dict = {'source': wind_type}
-    if not wind_type == 'none':
-        wind_dict['timeseries_file'] = scenario_config["event"]['sfincs_forcing']['wind']
+        if "rainfall" in scenario_config["event"]["sfincs_forcing"].keys():
+            rain_fn = scenario_config["event"]["sfincs_forcing"]["rainfall"]
 
-    rainfall_dict = {'source': rainfall_type}
-    if not rainfall_type == 'none':
-        rainfall_dict['timeseries_file'] = scenario_config["event"]['sfincs_forcing']['rainfall']          
-
-    
-    # Set waterlevel forcing type
-    if event_type == "Historical_nearshore":
-        tide_type = "timeseries"
-        if (
-        scenario_config["event"]["sfincs_forcing"]["waterlevel"] in dc.sources or 
-        Path(scenario_config["event"]["sfincs_forcing"]["waterlevel"]).suffix == '.nc'
-        ):
-            placeholder_path = database.input_path/'events'/scenario_config["event"]["name"]/'placeholder.csv'
-            tide_dict['timeseries_file'] = str(placeholder_path.name)
-        else:
-            tide_dict["timeseries_file"] = scenario_config["event"]["sfincs_forcing"]["waterlevel"]
-    elif event_type =="Historical_offshore":
-        tide_type = "model"
-    tide_dict = {'source': tide_type}
+    if (event_folder/"meteo.nc").exists():
+        wind_forcing = wind.WindNetCDF(unit=units.velocity, path=meteo_fn)
+        rain_forcing = rainfall.RainfallNetCDF(unit=units.intensity, path=meteo_fn)
+        forcings["WIND"] = [wind_forcing]
+        forcings["RAINFALL"] = [rain_forcing]
+    if (event_folder/"wind.nc").exists():
+        wind_forcing = wind.WindNetCDF(unit=units.velocity, path=wind_fn)
+        forcings["WIND"] = [wind_forcing]
+    if (event_folder/"rainfall.nc").exists():
+        rain_forcing = rainfall.RainfallNetCDF(unit=units.intensity, path=rain_fn)
 
     event_dict = {
-        'name': scenario_config["event"]["name"],
-        'description': f"Event generated from toplevel {scenario_config['name']} config file",
-        'mode': 'single_event',
-        'template': event_type,
-        'timing': 'historical',
-        'time': {
-            'start_time': scenario_config["event"]["start_time"],
-            'end_time': scenario_config["event"]["end_time"],
+        "name": event_name,
+        "time": {
+            "start_time": start_time,
+            "end_time": end_time,
         },
-        'river':  [{}],
-        'tide': tide_dict,
-        'wind': wind_dict,
-        'rainfall': rainfall_dict,
-        'surge': {'source': 'none'},
-        'water_level_offset': {'value': 0, 'units': 'meters'}
+        "template": "Historical",
+        "mode": "single_event",
+        "forcings": forcings
     }
 
-    return events.create_historical_nearshore_event(attrs = event_dict)
+    if "waterlevel" in scenario_config["event"]["sfincs_forcing"]:
+        waterlevel_key = scenario_config["event"]["sfincs_forcing"]["waterlevel"]
+        ds = dc.get_geodataset(waterlevel_key, time_tuple=(start_time, end_time))
+        ds.to_netcdf(event_folder/"waterlevel.nc")
+
+    return events.create_event(attrs=event_dict)
 
 
 def create_projection(database: IDatabase, scenario_config: dict) -> IProjection:
@@ -262,7 +294,7 @@ def create_projection(database: IDatabase, scenario_config: dict) -> IProjection
     projections_existing = projections.get_projections()
 
     # If necessary create new projection, save it and return object, otherwise load existing and return object
-    if not scenario_config["projection"]["name"] in projections_existing["name"]:
+    if scenario_config["projection"]["name"] not in projections_existing["name"]:
         projection_new = create_projection_config(database, scenario_config)
         projections.save_projection(projection_new)
         return projection_new
@@ -331,11 +363,12 @@ def create_strategy(database: IDatabase, scenario_config: dict) -> IStrategy:
     strategies_existing = strategies.get_strategies()
 
     # If necessary create new strategy, save it and return object, otherwise load existing and return object
-    if not scenario_config["strategy"]["name"] in strategies_existing['name']:
+    if scenario_config["strategy"]["name"] not in strategies_existing['name']:
         strategy_new = create_strategy_config(database, scenario_config)
         strategies.save_strategy(strategy_new)
         return strategy_new
-    else: return strategies.get_strategy(scenario_config["strategy"]["name"])
+    else:
+        return strategies.get_strategy(scenario_config["strategy"]["name"])
 
 def create_strategy_config(database: IDatabase, scenario_config: dict) -> IStrategy:
     """Create FloodAdapt Strategy object from scenario configuration. Where necessary create new measures, otherwise use existing ones
@@ -362,11 +395,11 @@ def create_strategy_config(database: IDatabase, scenario_config: dict) -> IStrat
     # measures_existing = measures.get_measures(database)
     measures_existing = measures.get_measures()
     for measure in scenario_config["strategy"]:
-        if not 'measure' in measure:
+        if 'measure' not in measure:
             continue
 
         measure_list.append(scenario_config['strategy'][measure]['name'])
-        if not scenario_config['strategy'][measure]['name'] in measures_existing['name']:
+        if scenario_config['strategy'][measure]['name'] not in measures_existing['name']:
 
             measure_dict = {}
             measure_dict.update({"name": scenario_config['strategy'][measure]['name'], "type": scenario_config['strategy'][measure]['type']})

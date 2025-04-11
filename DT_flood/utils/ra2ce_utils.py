@@ -30,7 +30,7 @@ def setup_ra2ce(ra2ce_root: os.PathLike) -> None:
         docker run -v {str(ra2ce_root)}:/home/mambauser/project/ra2ce \
         -v {str(utils_path)}:/home/mambauser/project/utils_ra2ce_docker.py \
         -v {str(script_path)}:/home/mambauser/project/setup_ra2ce.py \
-        containers.deltares.nl/ra2ce/ra2ce:latest \
+        containers.deltares.nl/gfs/ra2ce:v1_0_0 \
         python /home/mambauser/project/setup_ra2ce.py
         """
     subprocess.run(cmd, shell=True)
