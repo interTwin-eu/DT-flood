@@ -24,7 +24,7 @@ There is a particular order in which to run the notebooks:
 The ConfigureFullScenario notebook will setup a particular run of the model chain and execute the run in the final cell. The output of the scenario can be visualized in the VisualizeScenario notebook.
 
 ### Necessary input data
-Currently the interface to data is a HydroMT DataCatalog (see [here](https://deltares.github.io/hydromt/latest/user_guide/data_prepare_cat.html) for more details). What data it should contain is indicated in the notebooks. 
+Currently the interface to data is a HydroMT DataCatalog (see [here](https://deltares.github.io/hydromt/latest/user_guide/data_prepare_cat.html) for more details). What data it should contain is indicated in the notebooks.
 This will change later.
 
 ### Running scenarios

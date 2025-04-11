@@ -29,18 +29,22 @@ database, scenario_config = init_scenario(database_root, scenario_name)
 scenario = database.scenarios.get(scenario_config["name"])
 event = scenario_config["event"]
 
-start_time = datetime.strptime(scenario_config['event']['start_time'],"%Y-%m-%d %H:%M:%S")
-end_time = datetime.strptime(scenario_config['event']['end_time'],"%Y-%m-%d %H:%M:%S")
+start_time = datetime.strptime(
+    scenario_config["event"]["start_time"], "%Y-%m-%d %H:%M:%S"
+)
+end_time = datetime.strptime(scenario_config["event"]["end_time"], "%Y-%m-%d %H:%M:%S")
 
 sf_adpt = database.static.get_overland_sfincs_model()
 sf_adpt.preprocess(scenario)
 
-sfincs_path = scenario.results_path / "Flooding" / "simulations" / database.site.attrs.sfincs.config.overland_model
+sfincs_path = (
+    scenario.results_path
+    / "Flooding"
+    / "simulations"
+    / database.site.attrs.sfincs.config.overland_model
+)
 sf = SfincsModel(
-    root=sfincs_path,
-    mode="r",
-    data_libs=event["data_catalogues"],
-    logger=logger
+    root=sfincs_path, mode="r", data_libs=event["data_catalogues"], logger=logger
 )
 sf.read()
 
@@ -48,9 +52,9 @@ if "waterlevel" in event["sfincs_forcing"]:
     h_fn = database.input_path / "events" / event["name"] / "waterlevel.nc"
     slr = scenario.projection.get_physical_projection().attrs.sea_level_rise.value
     ds_h = xr.open_dataset(h_fn)
-    sf.setup_waterlevel_forcing(geodataset=(ds_h['waterlevel']+slr))
+    sf.setup_waterlevel_forcing(geodataset=(ds_h["waterlevel"] + slr))
 
-inp = SfincsInput.from_file(sfincs_path/"sfincs.inp")
+inp = SfincsInput.from_file(sfincs_path / "sfincs.inp")
 config = inp.to_dict()
 reftime = config["tref"]
 
@@ -60,11 +64,10 @@ ds = xr.open_dataset(wf_out)
 df = ds["Q_src"].to_pandas()
 df.index = (df.index - reftime).total_seconds()
 df.to_csv(
-    sfincs_path/"sfincs.dis",
-    sep = " ",
+    sfincs_path / "sfincs.dis",
+    sep=" ",
     header=False,
 )
 config.update({"disfile": "sfincs.dis", "srcfile": "sfincs.src"})
 inp = SfincsInput.from_dict(config)
-inp.write(inp_fn=sfincs_path/"sfincs.inp")
-
+inp.write(inp_fn=sfincs_path / "sfincs.inp")

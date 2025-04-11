@@ -55,5 +55,3 @@ outputs:
         type: Directory
         outputBinding:
             glob: "$(inputs.output_folder.basename)"
-
-    

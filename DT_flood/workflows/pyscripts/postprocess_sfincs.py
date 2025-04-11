@@ -35,12 +35,7 @@ sf.read()
 zsmax = sf.results["zsmax"].max(dim="timemax")
 dem = sf.data_catalog.get_rasterdataset(demfile)
 
-utils.downscale_floodmap(
-    zsmax=zsmax,
-    dep=dem,
-    hmin=0.01,
-    floodmap_fn=floodmap_fn
-)
+utils.downscale_floodmap(zsmax=zsmax, dep=dem, hmin=0.01, floodmap_fn=floodmap_fn)
 
 hazard = xr.open_dataarray(floodmap_fn)
 hazard = hazard.rio.reproject(hazard.rio.crs)

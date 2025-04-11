@@ -30,17 +30,17 @@ event = scenario_config["event"]
 wflow_root = database.static_path / "templates" / "wflow"
 wf = WflowModel(
     root=wflow_root,
-    data_libs=scenario_config['event']['data_catalogues'],
-    mode='r',
+    data_libs=scenario_config["event"]["data_catalogues"],
+    mode="r",
     logger=logger,
 )
 wf.read()
 
 print("Updating WFlow model for warmup run")
-endtime = datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")
+endtime = datetime.strptime(event["start_time"], "%Y-%m-%d %H:%M:%S")
 starttime = endtime - timedelta(days=365)
-precip_fn = event['wflow_forcing']['precip_warmup']
-pet_fn = event['wflow_forcing']['pet_warmup']
+precip_fn = event["wflow_forcing"]["precip_warmup"]
+pet_fn = event["wflow_forcing"]["pet_warmup"]
 opt = {
     "setup_config": {
         "starttime": datetime.strftime(starttime, "%Y-%m-%dT%H:%M:%S"),
@@ -51,7 +51,7 @@ opt = {
     },
 }
 
-forcing_config = {    
+forcing_config = {
     "setup_precip_forcing": {
         "precip_fn": precip_fn,
         "precip_clim_fn": None,
@@ -62,8 +62,8 @@ forcing_config = {
         "temp_correction": True,
         "pet_method": "debruin",
         "skip_pet": False,
-        "dem_forcing_fn": event['wflow_forcing']['orography'],
-    }
+        "dem_forcing_fn": event["wflow_forcing"]["orography"],
+    },
 }
 opt.update(forcing_config)
 

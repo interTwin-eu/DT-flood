@@ -4,10 +4,14 @@ import argparse
 from pyproj import CRS
 import tomllib
 
-from ra2ce.network.network_config_data.network_config_data_reader import NetworkConfigDataReader
+from ra2ce.network.network_config_data.network_config_data_reader import (
+    NetworkConfigDataReader,
+)
 from ra2ce.network.network_config_data.network_config_data import HazardSection
 from ra2ce.network.network_config_data.enums.aggregate_wl_enum import AggregateWlEnum
-from ra2ce.analysis.analysis_config_data.analysis_config_data_reader import AnalysisConfigDataReader
+from ra2ce.analysis.analysis_config_data.analysis_config_data_reader import (
+    AnalysisConfigDataReader,
+)
 
 import utils_ra2ce_docker
 
@@ -25,31 +29,31 @@ staticdir = Path(args.static)
 hazard_fn = Path(args.floodmap)
 
 print("Copying RA2CE model to output folder")
-base_folder = staticdir /"templates"/"ra2ce"
-out_folder = staticdir.parent / "output" /"scenarios"/ scenario /"Impacts"/"ra2ce"
+base_folder = staticdir / "templates" / "ra2ce"
+out_folder = staticdir.parent / "output" / "scenarios" / scenario / "Impacts" / "ra2ce"
 if out_folder.exists():
     rmtree(out_folder)
-copytree(base_folder,out_folder)
+copytree(base_folder, out_folder)
 
 print("Setting up hazard")
-copy(hazard_fn,out_folder/"static"/"hazard"/hazard_fn.name)
+copy(hazard_fn, out_folder / "static" / "hazard" / hazard_fn.name)
 
-with open(staticdir/"config"/"sfincs.toml",'rb') as f:
+with open(staticdir / "config" / "sfincs.toml", "rb") as f:
     sfincs_config = tomllib.load(f)
 
-crs = CRS.from_string(sfincs_config['config']['csname'])
+crs = CRS.from_string(sfincs_config["config"]["csname"])
 
-network = NetworkConfigDataReader().read(out_folder/"network.ini")
+network = NetworkConfigDataReader().read(out_folder / "network.ini")
 network_hazard = HazardSection(
-    hazard_map = [hazard_fn.name],
-    hazard_id = None,
-    hazard_field_name = "waterdepth",
-    aggregate_wl = AggregateWlEnum.MAX,
-    hazard_crs = crs.to_string(),
+    hazard_map=[hazard_fn.name],
+    hazard_id=None,
+    hazard_field_name="waterdepth",
+    aggregate_wl=AggregateWlEnum.MAX,
+    hazard_crs=crs.to_string(),
 )
 network.hazard = network_hazard
 
-analysis = AnalysisConfigDataReader().read(out_folder/"analysis.ini")
+analysis = AnalysisConfigDataReader().read(out_folder / "analysis.ini")
 analysis.analyses[0].threshold = 0.5
 analysis.analyses[0].calculate_route_without_disruption = False
 

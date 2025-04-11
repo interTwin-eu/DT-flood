@@ -23,7 +23,7 @@ fiatdir = Path(args.fiatdir)
 # Fetch FA database, misc
 database, scenario_config = init_scenario(database_root, scenario_name)
 
-scenario = scenarios.get_scenario(scenario_config['name'])
+scenario = scenarios.get_scenario(scenario_config["name"])
 
 fiat_out_root = scenario.impacts.impacts_path / "fiat_model"
 print(f"Copying FIAT model from {fiatdir} to {fiat_out_root}")
@@ -31,8 +31,8 @@ copytree(fiatdir, fiat_out_root)
 
 fiat_adpt = FiatAdapter(
     model_root=fiat_out_root,
-    config=database.site.attrs.fiat.config, 
-    config_base_path=database.static_path
+    config=database.site.attrs.fiat.config,
+    config_base_path=database.static_path,
 )
 print(f"Adapter model root: {fiat_adpt._model.root}")
 print(f"Adapter config path: {fiat_adpt.config_base_path}")

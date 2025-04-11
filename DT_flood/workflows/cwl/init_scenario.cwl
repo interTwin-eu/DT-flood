@@ -28,7 +28,7 @@ inputs:
             prefix: "--scenario"
 
 
-outputs: 
+outputs:
     output_folder:
         type: Directory
         outputBinding:

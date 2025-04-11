@@ -9,24 +9,28 @@ from hydromt_wflow import WflowModel
 from flood_adapt.object_model.scenario import Scenario
 
 fa_database_fn = Path(argv[1])
-scenario_fn = fa_database_fn / "input" / "scenarios" / argv[2] / (argv[2]+".toml")
+scenario_fn = fa_database_fn / "input" / "scenarios" / argv[2] / (argv[2] + ".toml")
 data_catalog_fn = Path(argv[3])
 
-print(f"Configuring WFlow warmup run for FloodAdapt Database {fa_database_fn.stem} with scenario {argv[2]}")
+print(
+    f"Configuring WFlow warmup run for FloodAdapt Database {fa_database_fn.stem} with scenario {argv[2]}"
+)
 
 scenario = Scenario.load_file(scenario_fn)
 scenario.init_object_model()
 
-endtime = datetime.strptime(scenario.direct_impacts.hazard.event.attrs.time.start_time, "%Y%m%d %H%M%S")
+endtime = datetime.strptime(
+    scenario.direct_impacts.hazard.event.attrs.time.start_time, "%Y%m%d %H%M%S"
+)
 starttime = endtime - timedelta(days=365)
 
-wflow_root = fa_database_fn / 'static' / 'templates' / 'wflow'
+wflow_root = fa_database_fn / "static" / "templates" / "wflow"
 logger = setuplog("update_wflow", log_level=10)
 
 wf = WflowModel(
     root=wflow_root,
     data_libs=data_catalog_fn,
-    mode='r',
+    mode="r",
     logger=logger,
 )
 wf.read()
@@ -49,10 +53,18 @@ opt = {
         "temp_correction": True,
         "dem_forcing_fn": "era5_orography",
         "skip_pet": False,
-    }
+    },
 }
 
-wf_warmup_root = fa_database_fn / "output" / "Scenarios" / argv[2] / "Flooding" / "simulations" / "wflow_warmup"
+wf_warmup_root = (
+    fa_database_fn
+    / "output"
+    / "Scenarios"
+    / argv[2]
+    / "Flooding"
+    / "simulations"
+    / "wflow_warmup"
+)
 wf.set_root(wf_warmup_root, mode="w+")
 wf.update(wf_warmup_root, opt=opt, write=False)
 wf.write()

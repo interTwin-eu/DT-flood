@@ -40,12 +40,7 @@ elif map_type == "water_depth":
 else:
     raise ValueError("No Valid Floodmap Type")
 
-fa_adpt._model.setup_hazard(
-    map_fn=map_fn,
-    map_type=map_type,
-    var=var,
-    nodata=-999
-)
+fa_adpt._model.setup_hazard(map_fn=map_fn, map_type=map_type, var=var, nodata=-999)
 
 fiat_path = scenario.impacts.impacts_path / "fiat_model"
 fa_adpt.write(path_out=fiat_path)
