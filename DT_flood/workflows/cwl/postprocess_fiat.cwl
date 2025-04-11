@@ -1,33 +1,40 @@
 cwlVersion: v1.2
 class: CommandLineTool
 
-baseCommand: ["python"]
-
 requirements:
-    InlineJavascriptRequirement: {}
     InitialWorkDirRequirement:
-        listing:    
-            - $(inputs.pyscript)
-            - $(inputs.fa_database)
+        listing:
+            - $(inputs.input_folder)
+            - $(inputs.static_folder)
+
+baseCommand: ["python"]
 
 inputs:
     pyscript:
         type: File
         inputBinding:
-            position: 1
-    fa_database:
+            position: -1
+    input_folder:
         type: Directory
         inputBinding:
-            position: 2
+            prefix: "--input"
+    static_folder:
+        type: Directory
+        inputBinding:
+            prefix: "--static"
+    output_folder:
+        type: Directory
     scenario:
         type: string
         inputBinding:
-            position: 3
-
-
+            prefix: "--scenario"
+    fiat_dir:
+        type: Directory
+        inputBinding:
+            prefix: "--fiatdir"
 
 outputs:
-    fa_database_out:
+    fiat_out_dir:
         type: Directory
         outputBinding:
-            glob: "$(inputs.fa_database.basename)"
+            glob: "$(inputs.output_folder.basename)/scenarios/$(inputs.scenario)"

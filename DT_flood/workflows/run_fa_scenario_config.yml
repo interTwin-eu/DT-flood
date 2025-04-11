@@ -1,43 +1,59 @@
-fa_database:
+# FloodAdapt things
+fa_input_folder:
   class: Directory
-  path: "../FloodAdapt_database/Humber/"
-scenario: "Empty_Event_current_no_measures"
-data_catalog:
-  class: File
-  path: "/home/wotromp/DestinE_workflows/deltares_data_wsl.yml"
+  path: ./fa_database/Humber/input/
+fa_static_folder:
+  class: Directory
+  path: ./fa_database/Humber/static/
+scenario: test_scenario
+
+# Script things
 script_init:
   class: File
-  path: "./pyscripts/init_fa_database.py"
-script_update_wflow:
+  path: ./py/init_scenario.py
+script_update_wflow_warmup:
   class: File
-  path: "./pyscripts/update_wflow.py"
+  path: ./py/update_wflow_warmup.py
+script_update_wflow_event:
+  class: File
+  path: ./py/update_wflow_event.py
 script_update_sfincs:
   class: File
-  path: "./pyscripts/update_sfincs.py"
-script_arrange:
+  path: ./py/update_sfincs.py
+script_postprocess_sfincs:
   class: File
-  path: "./pyscripts/arrange_fa_folders.py"
+  path: ./py/postprocess_sfincs.py
 script_update_fiat:
   class: File
-  path: "./pyscripts/update_fiat.py"
+  path: ./py/update_fiat.py
 script_run_fiat:
   class: File
-  path: "./pyscripts/run_fiat.py"
-
-
-oscar_script:
+  path: ./py/run_fiat.sh
+script_postprocess_fiat:
   class: File
-  path: cwl_OSCAR/oscar_workflow/oscar.py
-endpoint: 
-user: 
-password: 
-service: wflow
-filename:
+  path: ./py/postprocess_fiat.py
+script_update_ra2ce:
+  class: File
+  path: ./py/update_ra2ce.py
+script_construct_output:
+  class: File
+  path: ./py/construct_output.py
+script_utils_ra2ce_docker:
+  class: File
+  path: ./py/utils_ra2ce_docker.py
+script_oscar:
+  class: File
+  path: ./py/oscar.py
+
+# Oscar things
+# endpoint: 'https://charming-zhukovsky8.im.grycap.net'
+endpoint: 'https://oscar-ukri.intertwin.fedcloud.eu'
+refreshtoken:
+service_directory:
   class: Directory
-  path: cwl_OSCAR/wflow_input
-oscar_service:
-  class: Directory
-  path: cwl_OSCAR/services
-output:
-  class: Directory
-  path: cwl_OSCAR/output
+  path: ./oscar_services/
+oscar_output: output
+service_wflow: wflow
+service_sfincs: sfincs
+service_ra2ce: ra2ce
+

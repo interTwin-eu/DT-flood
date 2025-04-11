@@ -22,19 +22,14 @@ inputs:
         type: Directory
         inputBinding:
             prefix: "--static"
-    output_folder:
-        type: Directory
     scenario:
         type: string
         inputBinding:
             prefix: "--scenario"
-    wflow_dir:
-        type: Directory
-        inputBinding:
-            prefix: "--wflowdir"
 
-outputs:
-    sfincs_dir:
+
+outputs: 
+    output_folder:
         type: Directory
         outputBinding:
-            glob: "$(inputs.output_folder.basename)/scenarios/$(inputs.scenario)/Flooding/simulations/overland"
+            glob: "./output/"
