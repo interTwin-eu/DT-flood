@@ -1,9 +1,8 @@
 from pathlib import Path
 from shutil import copy, copytree, rmtree
-from sys import argv
-import tomli
-import xarray as xr
+import argparse
 from pyproj import CRS
+import tomllib
 
 from ra2ce.network.network_config_data.network_config_data_reader import NetworkConfigDataReader
 from ra2ce.network.network_config_data.network_config_data import HazardSection
@@ -11,30 +10,34 @@ from ra2ce.network.network_config_data.enums.aggregate_wl_enum import AggregateW
 from ra2ce.analysis.analysis_config_data.analysis_config_data_reader import AnalysisConfigDataReader
 
 import utils_ra2ce_docker
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--input")
+parser.add_argument("--static")
+parser.add_argument("--scenario")
+parser.add_argument("--floodmap")
+
+args = parser.parse_args()
+
 # parse arguments
-fa_database_fn = Path(argv[1])
-scenario_fn = fa_database_fn / (argv[2]+"_toplevel.toml")
+scenario = args.scenario
+staticdir = Path(args.static)
+hazard_fn = Path(args.floodmap)
 
-with open(fa_database_fn/"static"/"site"/"site.toml",'rb') as f:
-    site = tomli.load(f)
-
-print(f"Copying RA2CE model to output folder")
-base_folder = fa_database_fn/"static"/"templates"/"ra2ce"
-out_folder = fa_database_fn/"output"/"scenarios"/argv[2]/"Impacts"/"ra2ce"
+print("Copying RA2CE model to output folder")
+base_folder = staticdir /"templates"/"ra2ce"
+out_folder = staticdir.parent / "output" /"scenarios"/ scenario /"Impacts"/"ra2ce"
 if out_folder.exists():
     rmtree(out_folder)
 copytree(base_folder,out_folder)
 
-print(f"Setting up hazard")
-hazard_fn = fa_database_fn/"output"/"scenarios"/argv[2]/"Flooding"/f"FloodMap_{argv[2]}.tif"
+print("Setting up hazard")
 copy(hazard_fn,out_folder/"static"/"hazard"/hazard_fn.name)
-# Make sure CRS and Affine transform of hazard map is correct
-# TODO: Move to sfincs postprocess
-# hazard = xr.open_dataarray(out_folder/"static"/"hazard"/hazard_fn.name)
-# hazard = hazard.rio.reproject(hazard.rio.crs)
-# hazard.rio.to_raster(str(out_folder/"static"/"hazard"/hazard_fn.name))
 
-crs = CRS.from_string(site['sfincs']['csname'])
+with open(staticdir/"config"/"sfincs.toml",'rb') as f:
+    sfincs_config = tomllib.load(f)
+
+crs = CRS.from_string(sfincs_config['config']['csname'])
 
 network = NetworkConfigDataReader().read(out_folder/"network.ini")
 network_hazard = HazardSection(
@@ -47,7 +50,6 @@ network_hazard = HazardSection(
 network.hazard = network_hazard
 
 analysis = AnalysisConfigDataReader().read(out_folder/"analysis.ini")
-analysis.analyses[0].aggregate_wl = "max"
 analysis.analyses[0].threshold = 0.5
 analysis.analyses[0].calculate_route_without_disruption = False
 
