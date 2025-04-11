@@ -1,27 +1,49 @@
-import os
 from pathlib import Path
-from sys import argv
+import argparse
 import xarray as xr
+
+from hydromt.log import setuplog
+from hydromt_sfincs import SfincsModel
+import hydromt_sfincs.utils as utils
 
 from DT_flood.utils.fa_scenario_utils import init_scenario
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--input")
+parser.add_argument("--static")
+parser.add_argument("--scenario")
+parser.add_argument("--sfincsdir")
 
-database, scenario = init_scenario(Path(argv[1]), (argv[2]+"_toplevel.toml"))
+args = parser.parse_args()
 
-scenario_obj = database.scenarios.get(scenario['name'])
+logger = setuplog("update_sfincs", log_level=10)
 
-scenario_obj.init_object_model()
+# Unpack args
+scenario_name = args.scenario
+database_root = Path(args.input).parent
+sf_root = Path(args.sfincsdir) / "data"
 
+# Fetch FA database, misc
+database, scenario_config = init_scenario(database_root, scenario_name)
+demfile = database.static_path / "dem" / database.site.attrs.sfincs.dem.filename
+floodmap_fn = f"FloodMap_{scenario_name}.tif"
+zsmax_fn = "max_water_level_map.nc"
 
-scenario_obj.direct_impacts.hazard.set_simulation_paths()
-print("Writing water levels map")
-scenario_obj.direct_impacts.hazard.write_water_level_map()
-print("Writing downscaled floodmap")
-scenario_obj.direct_impacts.hazard.write_floodmap_geotiff()
-scenario_obj.direct_impacts.hazard.set_event()
-scenario_obj.direct_impacts.hazard._get_flood_map_path()
-print(f"Floodmap written to {scenario_obj.direct_impacts.hazard.flood_map_path}")
-hazard_fn = scenario_obj.results_path/"Flooding"/f"FloodMap_{scenario['name']}.tif"
-hazard = xr.open_dataarray(hazard_fn)
+sf = SfincsModel(root=sf_root, logger=logger, mode="r+")
+sf.read()
+
+zsmax = sf.results["zsmax"].max(dim="timemax")
+dem = sf.data_catalog.get_rasterdataset(demfile)
+
+utils.downscale_floodmap(
+    zsmax=zsmax,
+    dep=dem,
+    hmin=0.01,
+    floodmap_fn=floodmap_fn
+)
+
+hazard = xr.open_dataarray(floodmap_fn)
 hazard = hazard.rio.reproject(hazard.rio.crs)
-hazard.rio.to_raster(str(hazard_fn))
+hazard.rio.to_raster(floodmap_fn)
+
+zsmax.to_netcdf(zsmax_fn)
