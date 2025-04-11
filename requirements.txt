@@ -1,8 +1,0 @@
-cartopy
-cwltool
-dask==2024.6.0
-gwwapi
-ipykernel
-jupyter
-hydromt_wflow
-flood_adapt @ git+https://github.com/Deltares-research/FloodAdapt.git@6a18711
