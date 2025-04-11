@@ -1,11 +1,3 @@
-# *
-# !running_the_notebooks/
-# !Notebooks/ConfigureFullScenario.ipynb
-# !Notebooks/SetupFIAT.ipynb
-# !Notebooks/SetupSFINCS.ipynb
-# !Notebooks/SetupSite.ipynb
-# !Notebooks/SetupWFlow.ipynb
-# !Notebooks/VisualizeScenario.ipynb
 cache/
 tmp/
 

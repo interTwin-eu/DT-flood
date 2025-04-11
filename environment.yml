@@ -16,6 +16,7 @@ dependencies:
   - pip
   - pip:
     - jupyter
+    - pre-commit
     - git+https://github.com/Deltares-research/FloodAdapt.git
     - gwwapi
     - liboidcagent
