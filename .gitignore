@@ -8,3 +8,5 @@ __pycache__/
 .pixi/
 
 **/cache
+
+linter.log
