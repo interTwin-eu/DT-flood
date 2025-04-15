@@ -22,3 +22,4 @@ dependencies:
     - liboidcagent
     - minio
     - oscar-python
+    - rucio-clients
