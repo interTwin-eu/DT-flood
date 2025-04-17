@@ -1,0 +1,2 @@
+examples/baltic/*
+!examples/baltic/*.ipynb
