@@ -13,6 +13,7 @@ dependencies:
   - hydromt_wflow
   - mapclassify
   - python=3.11
+  - ruff
   - pip
   - pip:
     - jupyter
