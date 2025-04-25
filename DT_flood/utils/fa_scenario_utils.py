@@ -1,28 +1,26 @@
-import tomli
+"""Utils functions for setting up FloodAdapt objects."""
+
 import os
 import shutil
-from typing import Union
 from pathlib import Path
+from typing import Union
 
-from hydromt.data_catalog import DataCatalog
-
-from flood_adapt.api import static
-from flood_adapt.api import events
-from flood_adapt.api import projections
-from flood_adapt.api import measures
-from flood_adapt.api import strategies
-from flood_adapt.api import scenarios
-from flood_adapt.misc.config import Settings, UnitSystem
+import geopandas as gpd
+import tomli
+from flood_adapt.api import events, measures, projections, scenarios, static, strategies
 from flood_adapt.dbs_classes.interface.database import IDatabase
+from flood_adapt.misc.config import Settings, UnitSystem
+from flood_adapt.object_model.hazard.forcing import rainfall, wind
 from flood_adapt.object_model.hazard.interface.events import IEvent
 from flood_adapt.object_model.interface.projections import IProjection
-from flood_adapt.object_model.interface.strategies import IStrategy
 from flood_adapt.object_model.interface.scenarios import IScenario
+from flood_adapt.object_model.interface.strategies import IStrategy
 
-from flood_adapt.object_model.hazard.forcing import wind, rainfall
+from DT_flood.utils.data_utils import get_dataset_names, get_event_forcing_data
 
 
 def tree(directory):
+    """Print the folder structure of a directory."""
     print(f"+ {directory}")
     for path in sorted(directory.rglob("*")):
         depth = len(path.relative_to(directory).parts)
@@ -55,7 +53,6 @@ def folder_structure(root: Path):
 
 def create_systems_folder(database_path: Path):
     """Create the systems folder with empty files to get around FA model executable validation."""
-
     systems_path = database_path / "system"
     fiat_path = systems_path / "fiat" / "fiat"
     sfincs_path = systems_path / "sfincs" / "sfincs"
@@ -70,7 +67,7 @@ def create_systems_folder(database_path: Path):
 def init_scenario(
     database_path: Union[str, os.PathLike], scenario_name: str
 ) -> tuple[IDatabase, dict]:
-    """Function fetching topmost objects for configuration
+    """Fetch topmost objects for configuration.
 
     Parameters
     ----------
@@ -88,7 +85,6 @@ def init_scenario(
         scenario : dict
             Dictionary containing scenario configuration parameters
     """
-
     if isinstance(database_path, str):
         database_path = Path(database_path)
 
@@ -123,6 +119,7 @@ def init_scenario(
 
 
 def create_scenario_config(database: IDatabase, scenario_config: dict) -> IScenario:
+    """Create FloodAdapt Scenario object from scenario configuration."""
     scenario_dict = {
         "name": scenario_config["name"],
         "description": f"Scenario generated from toplevel {scenario_config['name']} config file",
@@ -134,7 +131,9 @@ def create_scenario_config(database: IDatabase, scenario_config: dict) -> IScena
 
 
 def create_scenario(database: IDatabase, scenario_config: dict) -> IScenario:
-    """Function to check if scenario already exists. If not, create it and save config file. If yes, return Scenario object of pre-existing event config
+    """Check if scenario already exists.
+
+    If not, create it and save config file. If yes, return Scenario object of pre-existing event config.
 
     Parameters
     ----------
@@ -148,7 +147,6 @@ def create_scenario(database: IDatabase, scenario_config: dict) -> IScenario:
     IScenario
         FloodAdapt Scenario object
     """
-
     # Create Event, Projection, Strategy used in scenario
     _ = create_event(database=database, scenario_config=scenario_config)
     _ = create_projection(database=database, scenario_config=scenario_config)
@@ -167,7 +165,9 @@ def create_scenario(database: IDatabase, scenario_config: dict) -> IScenario:
 
 
 def create_event(database: IDatabase, scenario_config: dict) -> IEvent:
-    """Function to check if event already exists. If not, create it and save config file. If yes, return Event object of pre-existing event config
+    """Check if event already exists.
+
+    If not, create it and save config file. If yes, return Event object of pre-existing event config
 
     Parameters
     ----------
@@ -193,7 +193,7 @@ def create_event(database: IDatabase, scenario_config: dict) -> IEvent:
 
 
 def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
-    """Create FloodAdapt Event object from scenario configuration
+    """Create FloodAdapt Event object from scenario configuration.
 
     Parameters
     ----------
@@ -212,11 +212,34 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
     NotImplementedError
         Only supports HistoricalNearshore event types
     """
+    forcing_vars = {
+        "meteo": ["precip", "wind10_u", "wind10_v"],
+        "wind": ["wind10_u", "wind10_v"],
+        "rainfall": ["precip"],
+        "waterlevel": ["waterlevel"],
+        "wflow": ["kin", "kout", "temp", "press_msl"],
+    }
+
     units = UnitSystem("metric")
 
     start_time = scenario_config["event"]["start_time"]
     end_time = scenario_config["event"]["end_time"]
     event_name = scenario_config["event"]["name"]
+
+    sf_bounds = database.static.get_model_boundary().to_crs(4326).total_bounds
+    wf_bounds = (
+        gpd.read_file(
+            database.static_path
+            / "templates"
+            / "wflow"
+            / "staticgeoms"
+            / "region.geosjon"
+        )
+        .to_crs(4326)
+        .total_bounds
+    )
+
+    dataset_names = get_dataset_names()
 
     event_folder = database.base_path / "input" / "events" / event_name
     if not event_folder.exists():
@@ -228,48 +251,83 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
 
     forcings = {}
 
-    # Set meteo forcing type
-    if scenario_config["event"]["data_catalogues"]:
-        dc = DataCatalog(scenario_config["event"]["data_catalogues"])
+    # Get SFINCS forcing data
+    for forcing in scenario_config["event"]["sfincs_forcing"]:
+        if forcing not in forcing_vars:
+            print(f"Warning: {forcing} not in forcing_vars, skipping {forcing}")
+            continue
+        if scenario_config["event"]["sfincs_forcing"][forcing] not in dataset_names:
+            raise ValueError(
+                f"Dataset {scenario_config['event']['sfincs_forcing'][forcing]} not in dataset names: {dataset_names}"
+            )
+        ds = get_event_forcing_data(
+            dataset=scenario_config["event"]["sfincs_forcing"][forcing],
+            start_date=start_time,
+            end_date=end_time,
+            data_vars=forcing_vars[forcing],
+            bounds=sf_bounds,
+        )
+        ds.to_netcdf(data_folder / f"{forcing}.nc")
+        shutil.copy(data_folder / f"{forcing}.nc", event_folder / f"{forcing}.nc")
 
-        if "meteo" in scenario_config["event"]["sfincs_forcing"].keys():
-            meteo_key = scenario_config["event"]["sfincs_forcing"]["meteo"]
-            ds = dc.get_rasterdataset(meteo_key, time_tuple=(start_time, end_time))
-            meteo_fn = data_folder / "meteo.nc"
-            ds.to_netcdf(meteo_fn)
-            shutil.copy(meteo_fn, event_folder / "meteo.nc")
-        if "wind" in scenario_config["event"]["sfincs_forcing"].keys():
-            wind_key = scenario_config["event"]["sfincs_forcing"]["wind"]
-            ds = dc.get_rasterdataset(wind_key, time_tuple=(start_time, end_time))
-            wind_fn = data_folder / "wind.nc"
-            ds.to_netcdf(wind_fn)
-            shutil.copy(wind_fn, event_folder / "wind.nc")
-        if "rainfall" in scenario_config["event"]["sfincs_forcing"].keys():
-            rainfall_key = scenario_config["event"]["sfincs_forcing"]["rainfall"]
-            ds = dc.get_rasterdataset(rainfall_key, time_tuple=(start_time, end_time))
-            rain_fn = data_folder / "rainfall.nc"
-            ds.to_netcdf(rain_fn)
-            shutil.copy(rain_fn, event_folder / "rainfall.nc")
-    else:
-        if "meteo" in scenario_config["event"]["sfincs_forcing"].keys():
-            meteo_fn = scenario_config["event"]["sfincs_forcing"]["meteo"]
+    # Get WFlow forcing data
+    for forcing in scenario_config["event"]["wflow_forcing"]:
+        if scenario_config["event"]["wflow_forcing"][forcing] not in dataset_names:
+            raise ValueError(
+                f"Dataset {scenario_config['event']['wflow_forcing'][forcing]} not in dataset names: {dataset_names}"
+            )
+        ds = get_event_forcing_data(
+            dataset=scenario_config["event"]["wflow_forcing"][forcing],
+            start_date=start_time,
+            end_date=end_time,
+            data_vars=forcing_vars["wflow"],
+            bounds=wf_bounds,
+        )
+        ds.to_netcdf(data_folder / f"{forcing}.nc")
+        shutil.copy(data_folder / f"{forcing}.nc", event_folder / f"{forcing}.nc")
 
-        if "wind" in scenario_config["event"]["sfincs_forcing"].keys():
-            wind_fn = scenario_config["event"]["sfincs_forcing"]["wind"]
+    # # Set meteo forcing type
+    # if scenario_config["event"]["data_catalogues"]:
+    #     dc = DataCatalog(scenario_config["event"]["data_catalogues"])
 
-        if "rainfall" in scenario_config["event"]["sfincs_forcing"].keys():
-            rain_fn = scenario_config["event"]["sfincs_forcing"]["rainfall"]
+    #     if "meteo" in scenario_config["event"]["sfincs_forcing"].keys():
+    #         meteo_key = scenario_config["event"]["sfincs_forcing"]["meteo"]
+    #         ds = dc.get_rasterdataset(meteo_key, time_tuple=(start_time, end_time))
+    #         meteo_fn = data_folder / "meteo.nc"
+    #         ds.to_netcdf(meteo_fn)
+    #         shutil.copy(meteo_fn, event_folder / "meteo.nc")
+    #     if "wind" in scenario_config["event"]["sfincs_forcing"].keys():
+    #         wind_key = scenario_config["event"]["sfincs_forcing"]["wind"]
+    #         ds = dc.get_rasterdataset(wind_key, time_tuple=(start_time, end_time))
+    #         wind_fn = data_folder / "wind.nc"
+    #         ds.to_netcdf(wind_fn)
+    #         shutil.copy(wind_fn, event_folder / "wind.nc")
+    #     if "rainfall" in scenario_config["event"]["sfincs_forcing"].keys():
+    #         rainfall_key = scenario_config["event"]["sfincs_forcing"]["rainfall"]
+    #         ds = dc.get_rasterdataset(rainfall_key, time_tuple=(start_time, end_time))
+    #         rain_fn = data_folder / "rainfall.nc"
+    #         ds.to_netcdf(rain_fn)
+    #         shutil.copy(rain_fn, event_folder / "rainfall.nc")
+    # else:
+    #     if "meteo" in scenario_config["event"]["sfincs_forcing"].keys():
+    #         meteo_fn = scenario_config["event"]["sfincs_forcing"]["meteo"]
+
+    #     if "wind" in scenario_config["event"]["sfincs_forcing"].keys():
+    #         wind_fn = scenario_config["event"]["sfincs_forcing"]["wind"]
+
+    #     if "rainfall" in scenario_config["event"]["sfincs_forcing"].keys():
+    #         rain_fn = scenario_config["event"]["sfincs_forcing"]["rainfall"]
 
     if (event_folder / "meteo.nc").exists():
-        wind_forcing = wind.WindNetCDF(unit=units.velocity, path=meteo_fn)
-        rain_forcing = rainfall.RainfallNetCDF(unit=units.intensity, path=meteo_fn)
+        wind_forcing = wind.WindNetCDF(unit=units.velocity, path="meteo.nc")
+        rain_forcing = rainfall.RainfallNetCDF(unit=units.intensity, path="meteo.nc")
         forcings["WIND"] = [wind_forcing]
         forcings["RAINFALL"] = [rain_forcing]
     if (event_folder / "wind.nc").exists():
-        wind_forcing = wind.WindNetCDF(unit=units.velocity, path=wind_fn)
+        wind_forcing = wind.WindNetCDF(unit=units.velocity, path="wind.nc")
         forcings["WIND"] = [wind_forcing]
     if (event_folder / "rainfall.nc").exists():
-        rain_forcing = rainfall.RainfallNetCDF(unit=units.intensity, path=rain_fn)
+        rain_forcing = rainfall.RainfallNetCDF(unit=units.intensity, path="rainfall.nc")
 
     event_dict = {
         "name": event_name,
@@ -282,16 +340,18 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
         "forcings": forcings,
     }
 
-    if "waterlevel" in scenario_config["event"]["sfincs_forcing"]:
-        waterlevel_key = scenario_config["event"]["sfincs_forcing"]["waterlevel"]
-        ds = dc.get_geodataset(waterlevel_key, time_tuple=(start_time, end_time))
-        ds.to_netcdf(event_folder / "waterlevel.nc")
+    # if "waterlevel" in scenario_config["event"]["sfincs_forcing"]:
+    #     waterlevel_key = scenario_config["event"]["sfincs_forcing"]["waterlevel"]
+    #     ds = dc.get_geodataset(waterlevel_key, time_tuple=(start_time, end_time))
+    #     ds.to_netcdf(event_folder / "waterlevel.nc")
 
     return events.create_event(attrs=event_dict)
 
 
 def create_projection(database: IDatabase, scenario_config: dict) -> IProjection:
-    """Function to check if projection already exists. If not, create it and save config file. If yes, return Projection object of pre-existing projection config
+    """Check if projection already exists.
+
+    If not, create it and save config file. If yes, return Projection object of pre-existing projection config
 
     Parameters
     ----------
@@ -318,7 +378,7 @@ def create_projection(database: IDatabase, scenario_config: dict) -> IProjection
 
 
 def create_projection_config(database: IDatabase, scenario_config: dict) -> IProjection:
-    """Create FloodAdapt Projection object from scenario configuration
+    """Create FloodAdapt Projection object from scenario configuration.
 
     Parameters
     ----------
@@ -332,7 +392,6 @@ def create_projection_config(database: IDatabase, scenario_config: dict) -> IPro
     IProjection
         FloodAdapt Projection object
     """
-
     # General projection config
     projection_dict = {
         "name": scenario_config["projection"]["name"],
@@ -383,7 +442,9 @@ def create_projection_config(database: IDatabase, scenario_config: dict) -> IPro
 
 
 def create_strategy(database: IDatabase, scenario_config: dict) -> IStrategy:
-    """Function to check if strategy already exists. If not, create it and save config file. If yes, return Strategy object of pre-existing strategy config
+    """Check if strategy already exists.
+
+    If not, create it and save config file. If yes, return Strategy object of pre-existing strategy config
 
     Parameters
     ----------
@@ -410,7 +471,9 @@ def create_strategy(database: IDatabase, scenario_config: dict) -> IStrategy:
 
 
 def create_strategy_config(database: IDatabase, scenario_config: dict) -> IStrategy:
-    """Create FloodAdapt Strategy object from scenario configuration. Where necessary create new measures, otherwise use existing ones
+    """Create FloodAdapt Strategy object from scenario configuration.
+
+    Where necessary create new measures, otherwise use existing ones.
 
     Parameters
     ----------
@@ -424,7 +487,6 @@ def create_strategy_config(database: IDatabase, scenario_config: dict) -> IStrat
     IStrategy
         FloodAdapt Strategy object
     """
-
     # General scenario config
     scenario_dict = {
         "name": scenario_config["strategy"]["name"],

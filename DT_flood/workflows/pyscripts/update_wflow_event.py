@@ -1,7 +1,9 @@
-from pathlib import Path
-from datetime import datetime
-from shutil import copy
+"""Script to update the Wflow model with a new event."""
+
 import argparse
+from datetime import datetime
+from pathlib import Path
+from shutil import copy
 
 from hydromt.log import setuplog
 from hydromt_wflow import WflowModel
@@ -28,6 +30,8 @@ warmup_states = warmup_dir / "run_default" / "outstate" / "outstates.nc"
 database, scenario_config = init_scenario(database_root, scenario_name)
 scenario = database.scenarios.get(scenario_config["name"])
 event = scenario_config["event"]
+event_dir = database.input_path / "events" / scenario.event._attrs.name
+
 
 wflow_root = database.static_path / "templates" / "wflow"
 wf = WflowModel(
@@ -42,8 +46,8 @@ starttime = datetime.strptime(
     scenario_config["event"]["start_time"], "%Y-%m-%d %H:%M:%S"
 )
 endtime = datetime.strptime(scenario_config["event"]["end_time"], "%Y-%m-%d %H:%M:%S")
-precip_fn = scenario_config["event"]["wflow_forcing"]["precip_event"]
-pet_fn = scenario_config["event"]["wflow_forcing"]["pet_event"]
+# precip_fn = scenario_config["event"]["wflow_forcing"]["precip_event"]
+# pet_fn = scenario_config["event"]["wflow_forcing"]["pet_event"]
 opt = {
     "setup_config": {
         "starttime": datetime.strftime(starttime, "%Y-%m-%dT%H:%M:%S"),
@@ -56,11 +60,11 @@ opt = {
 
 forcing_config = {
     "setup_precip_forcing": {
-        "precip_fn": precip_fn,
+        "precip_fn": event_dir / "precip_event.nc",
         "precip_clim_fn": None,
     },
     "setup_temp_pet_forcing": {
-        "temp_pet_fn": pet_fn,
+        "temp_pet_fn": event_dir / "pet_event.nc",
         "press_correction": True,
         "temp_correction": True,
         "pet_method": "debruin",

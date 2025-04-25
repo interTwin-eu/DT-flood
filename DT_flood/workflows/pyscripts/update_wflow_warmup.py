@@ -1,7 +1,8 @@
-from pathlib import Path
-from datetime import datetime
-from datetime import timedelta
+"""Script to update the Wflow model for warmup run."""
+
 import argparse
+from datetime import datetime, timedelta
+from pathlib import Path
 
 from hydromt.log import setuplog
 from hydromt_wflow import WflowModel
@@ -25,6 +26,7 @@ database_root = Path(args.input).parent
 database, scenario_config = init_scenario(database_root, scenario_name)
 scenario = database.scenarios.get(scenario_config["name"])
 event = scenario_config["event"]
+event_dir = database.input_path / "events" / scenario.event._attrs.name
 
 # wflow template model
 wflow_root = database.static_path / "templates" / "wflow"
@@ -39,8 +41,8 @@ wf.read()
 print("Updating WFlow model for warmup run")
 endtime = datetime.strptime(event["start_time"], "%Y-%m-%d %H:%M:%S")
 starttime = endtime - timedelta(days=365)
-precip_fn = event["wflow_forcing"]["precip_warmup"]
-pet_fn = event["wflow_forcing"]["pet_warmup"]
+# precip_fn = event["wflow_forcing"]["precip_warmup"]
+# pet_fn = event["wflow_forcing"]["pet_warmup"]
 opt = {
     "setup_config": {
         "starttime": datetime.strftime(starttime, "%Y-%m-%dT%H:%M:%S"),
@@ -53,11 +55,11 @@ opt = {
 
 forcing_config = {
     "setup_precip_forcing": {
-        "precip_fn": precip_fn,
+        "precip_fn": event_dir / "precip_warmup.nc",
         "precip_clim_fn": None,
     },
     "setup_temp_pet_forcing": {
-        "temp_pet_fn": pet_fn,
+        "temp_pet_fn": event_dir / "pet_warmup.nc",
         "press_correction": True,
         "temp_correction": True,
         "pet_method": "debruin",
