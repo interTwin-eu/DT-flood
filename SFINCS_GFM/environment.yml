@@ -5,6 +5,7 @@ channels:
 dependencies:
   - geoviews
   - hvplot
+  - hydromt_sfincs
   - ipykernel
   - graphviz
   - jupyter_bokeh
@@ -13,6 +14,6 @@ dependencies:
   - traitlets=5.14.3
   - pip
   - pip:
-    - git+https://github.com/TUW-GEO/dask-flood-mapper
+    - dask-flood-mapper[all]
     - git+https://github.com/Deltares-research/HydroFlows
     - -e .
