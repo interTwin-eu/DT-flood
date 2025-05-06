@@ -1,5 +1,4 @@
 from pathlib import Path
-import geopandas as gpd
 
 from hydromt_sfincs import SfincsModel
 
@@ -7,57 +6,54 @@ from hydroflows.workflow.method_parameters import Parameters
 from hydroflows.workflow.method import Method
 from hydroflows._typing import OutputDirPath, FileDirPath
 
-from sfincs_gfm.methods.utils import copy_sfincs_model
+from sfincs_gfm.methods.utils import copy_sfincs_model, parse_local_wl_data, fetch_local_wind_data
 
 class Input(Parameters):
 
     sfincs_inp: FileDirPath
 
-    dike_locs: Path
+    wl_file: Path
 
-    breach_locs = Path
+    wind_file: Path
 
 class Output(Parameters):
-
+    
     sfincs_out_inp: FileDirPath
 
 class Params(Parameters):
 
-    overtopping: bool = False
+    wl_offset: float = 0.0
 
     output_dir: OutputDirPath
 
     copy_model: bool = False
 
-class BreachDikes(Method):
+class UpdateForcing(Method):
 
-    name: str = "breach_dikes"
+    name: str = "update_forcing"
 
     def __init__(
             self,
             sfincs_inp: FileDirPath,
-            dike_locs: Path,
-            breach_locs: Path,
+            wl_file: Path,
+            wind_file: Path,
             output_dir: Path,
-            overtopping: bool = False,
             **params
     ):
         
         self.params: Params = Params(
-            overtopping=overtopping,
             output_dir=output_dir,
             **params
         )
         self.input: Input = Input(
             sfincs_inp=sfincs_inp,
-            dike_locs=dike_locs,
-            breach_locs=breach_locs,
+            wl_file=wl_file,
+            wind_file=wind_file,
         )
 
         if self.params.copy_model and not self.params.output_dir:
             raise ValueError("Unknown dest. folder for copy operation.")
-
-
+        
         sfincs_out_inp = self.params.output_dir / "sfincs.inp"
         if not self.params.copy_model and not self.params.output_dir.is_relative_to(
             self.input.sfincs_inp.parent
@@ -66,7 +62,7 @@ class BreachDikes(Method):
         self.output: Output = Output(
             sfincs_out_inp=sfincs_out_inp
         )
-    
+
     def _run(self):
 
         root = self.input.sfincs_inp.parent
@@ -76,31 +72,13 @@ class BreachDikes(Method):
         if copy_model:
             copy_sfincs_model(src=root, dest=out_root)
 
+        bzspd = parse_local_wl_data(self.input.wl_file)
+        wnd = fetch_local_wind_data(self.input.wind_file)
+
         sf = SfincsModel(root=root, mode="r", write_gis=False)
-
-        dikes = sf.data_catalog.get_geodataframe(
-            self.input.dike_locs, crs=sf.crs, geom=sf.region
-        )
-        breaches = gpd.read_file(self.input.breach_locs).to_crs(sf.crs)
-
-        s = gpd.GeoSeries(dikes.geometry)
-        breach_idx = s.sindex.nearest(breaches.geometry)
-
-        if self.params.overtopping:
-            dikes_breached = dikes.copy()
-            dikes_breached["z"].loc[breach_idx[1]] = 0.8
-            dikes_breached["par1"] = 0.6
-        else:
-            dikes_breached = dikes.drop(index=breach_idx[1])
-            dikes_breached["par1"] = 0.6
-
-        sf.setup_structures(structures=dikes_breached, stype="weir", merge=False)
+        sf.setup_waterlevel_forcing(timeseries=bzspd, merge=False)
+        sf.setup_wind_forcing(timeseries=wnd)
 
         sf.set_root(out_root, mode="w+")
-        sf.write()
-        
-
-
-
-            
+        sf.write_forcing()
 
