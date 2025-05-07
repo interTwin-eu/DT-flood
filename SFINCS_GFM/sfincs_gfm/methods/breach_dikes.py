@@ -15,7 +15,7 @@ class Input(Parameters):
 
     dike_locs: Path
 
-    breach_locs = Path
+    breach_locs: Path
 
 class Output(Parameters):
 

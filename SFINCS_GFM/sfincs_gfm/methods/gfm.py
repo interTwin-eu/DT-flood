@@ -56,7 +56,7 @@ class GFM(Method):
         Run the GFM method.
         """
 
-        client = Client(processes=False, threads_per_worker=2, n_workers=1, memory_limit="5GB")
+        _ = Client(processes=False, threads_per_worker=2, n_workers=1, memory_limit="4GB")
 
         start = self.params.starttime.strftime("%Y-%m-%d")
         end = self.params.endtime.strftime("%Y-%m-%d")
