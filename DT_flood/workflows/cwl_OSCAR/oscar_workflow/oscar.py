@@ -66,7 +66,7 @@ def check_service(client,service,service_directory):
     print("Checking OSCAR service status")
     try:
         service_info = client.get_service(service)
-        minio_info = json.loads(service_info.text)["storage_providers"]["minio"]["default"]
+        minio_info = json.loads(client.get_cluster_config().text)["minio_provider"]
         input_info = json.loads(service_info.text)["input"][0]
         output_info = json.loads(service_info.text)["output"][0]
         if service_info.status_code == 200:
