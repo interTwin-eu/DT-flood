@@ -1,20 +1,43 @@
-from pathlib import Path
-from sys import argv
-import pandas as pd
+"""Script for postprocessing FIAT run."""
 
+import argparse
+from pathlib import Path
+from shutil import copytree
+
+from flood_adapt.adapter.fiat_adapter import FiatAdapter
 from flood_adapt.api import scenarios
+
 from DT_flood.utils.fa_scenario_utils import init_scenario
 
-database, scenario_config = init_scenario(Path(argv[1]), (argv[2]+"_toplevel.toml"))
+parser = argparse.ArgumentParser()
+parser.add_argument("--input")
+parser.add_argument("--static")
+parser.add_argument("--scenario")
+parser.add_argument("--fiatdir")
 
-scenario = scenarios.get_scenario(scenario_config['name'])
+args = parser.parse_args()
 
-fiat_out_fn = Path(scenario.direct_impacts.fiat_path, "output", "output.csv")
-fiat_out = pd.read_csv(fiat_out_fn)
+# Unpack args
+scenario_name = args.scenario
+database_root = Path(args.input).parent
+fiatdir = Path(args.fiatdir)
 
-if "Total Damage" not in fiat_out.columns:
-    fiat_out["Total Damage"] = fiat_out["total_damage"]
+# Fetch FA database, misc
+database, scenario_config = init_scenario(database_root, scenario_name)
 
-fiat_out.to_csv(fiat_out_fn)
+scenario = scenarios.get_scenario(scenario_config["name"])
 
-scenario.direct_impacts.postprocess_fiat()
+fiat_out_root = scenario.impacts.impacts_path / "fiat_model"
+print(f"Copying FIAT model from {fiatdir} to {fiat_out_root}")
+copytree(fiatdir, fiat_out_root)
+
+fiat_adpt = FiatAdapter(
+    model_root=fiat_out_root,
+    config=database.site.attrs.fiat.config,
+    config_base_path=database.static_path,
+)
+print(f"Adapter model root: {fiat_adpt._model.root}")
+print(f"Adapter config path: {fiat_adpt.config_base_path}")
+
+fiat_adpt.read_outputs()
+fiat_adpt.postprocess(scenario=scenario)

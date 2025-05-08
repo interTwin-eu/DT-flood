@@ -2,33 +2,25 @@ name: DT-flood
 
 channels:
   - conda-forge
-  - numba
 
 dependencies:
   - cartopy
   - cwltool
-  # - dask=2024.6.0
-  # - conda-forge/label/delft_fiat_rc::delft_fiat #unpin after FA is compatible with latest
-  - delft_fiat=0.1.1
-  - folium
+  - delft_fiat
   - ipykernel
   - numpy
   - numexpr
-  # - hydromt_wflow
+  - hydromt_wflow
   - mapclassify
-  - pandas<2.0
-  - python<3.12
+  - python=3.11
+  - ruff
   - pip
   - pip:
-    - git+https://github.com/Deltares-research/CoastalHazardsToolkit.git
-    # - dfm_tools>=0.25
-    # - earthkit==0.8.4
-    # - jupyter
+    - jupyter
+    - pre-commit
     - git+https://github.com/Deltares-research/FloodAdapt.git
-    # - gwwapi
-    # - solara>=1.35
-    # - ipyleaflet==0.19
-    # - mapbox-earcut
-    # - liboidcagent
-    # - minio
-    # - oscar-python
+    - gwwapi
+    - liboidcagent
+    - minio
+    - oscar-python
+    - rucio-clients

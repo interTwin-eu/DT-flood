@@ -1,24 +1,50 @@
+"""RA2CE utility functions inside container."""
+
 from pathlib import Path
 
-from ra2ce.network.network_config_data.enums.network_type_enum import NetworkTypeEnum
-from ra2ce.network.network_config_data.enums.road_type_enum import RoadTypeEnum
-from ra2ce.network.network_config_data.enums.source_enum import SourceEnum
-from ra2ce.network.network_config_data.network_config_data import (NetworkConfigData, NetworkSection,OriginsDestinationsSection)
-from ra2ce.network.network_wrappers.osm_network_wrapper.osm_network_wrapper import OsmNetworkWrapper
-from ra2ce.network.exporters.geodataframe_network_exporter import GeoDataFrameNetworkExporter
-from ra2ce.network.exporters.multi_graph_network_exporter import MultiGraphNetworkExporter
-from ra2ce.analysis.analysis_config_data.analysis_config_data import AnalysisConfigData, AnalysisSectionLosses, ProjectSection
-from ra2ce.analysis.analysis_config_data.enums.weighing_enum import WeighingEnum
-
-from utils_ra2ce_docker import export_NetworkConfigData, export_AnalysisConfigData, tree
-
+from ra2ce.analysis.analysis_config_data.analysis_config_data import (  # type: ignore
+    AnalysisConfigData,
+    AnalysisSectionLosses,
+    ProjectSection,
+)
+from ra2ce.analysis.analysis_config_data.enums.weighing_enum import (  # type: ignore
+    WeighingEnum,  # type: ignore
+)
+from ra2ce.network.exporters.geodataframe_network_exporter import (  # type: ignore
+    GeoDataFrameNetworkExporter,
+)
+from ra2ce.network.exporters.multi_graph_network_exporter import (  # type: ignore
+    MultiGraphNetworkExporter,
+)
+from ra2ce.network.network_config_data.enums.network_type_enum import (  # type: ignore
+    NetworkTypeEnum,  # type: ignore
+)
+from ra2ce.network.network_config_data.enums.road_type_enum import (  # type: ignore
+    RoadTypeEnum,  # type: ignore
+)
+from ra2ce.network.network_config_data.enums.source_enum import (  # type: ignore
+    SourceEnum,  # type: ignore
+)
+from ra2ce.network.network_config_data.network_config_data import (  # type: ignore
+    NetworkConfigData,
+    NetworkSection,
+    OriginsDestinationsSection,
+)
+from ra2ce.network.network_wrappers.osm_network_wrapper.osm_network_wrapper import (  # type: ignore
+    OsmNetworkWrapper,
+)
+from utils_ra2ce_docker import (  # type: ignore
+    export_AnalysisConfigData,
+    export_NetworkConfigData,
+    tree,
+)
 
 root_dir = Path("/home/mambauser/project/ra2ce/")
 
-input_path = root_dir/"input"
-output_path = root_dir/"output"
-static_path = root_dir/"static"
-map_path = root_dir/"static"/"network"/"map.geojson"
+input_path = root_dir / "input"
+output_path = root_dir / "output"
+static_path = root_dir / "static"
+map_path = root_dir / "static" / "network" / "map.geojson"
 
 road_list = road_list = [
     RoadTypeEnum.MOTORWAY,
@@ -43,7 +69,7 @@ _network_section = NetworkSection(
     network_type=NetworkTypeEnum.DRIVE,
     road_types=road_list,
     save_gpkg=True,
-    source=SourceEnum.PICKLE
+    source=SourceEnum.PICKLE,
 )
 
 od_section = OriginsDestinationsSection(
@@ -53,7 +79,7 @@ od_section = OriginsDestinationsSection(
     destinations_names="B",
     id_name_origin_destination="OBJECT ID",
     origin_count="POPULATION",
-    category="category"
+    category="category",
 )
 
 # Pass specified sections as arguments for config
@@ -74,7 +100,7 @@ od_loss_section = AnalysisSectionLosses(
     weighing=WeighingEnum.LENGTH,
     calculate_route_without_disruption=False,
     save_csv=True,
-    save_gpkg=True
+    save_gpkg=True,
 )
 
 od_analysis = AnalysisConfigData(
@@ -83,19 +109,22 @@ od_analysis = AnalysisConfigData(
     output_path=output_path,
     static_path=static_path,
     project=ProjectSection(name="ra2ce"),
-    analyses=[od_loss_section]
+    analyses=[od_loss_section],
 )
 
 
 # export graph
-_exporter = MultiGraphNetworkExporter(basename='base_graph', export_types=['gpkg', 'pickle'])
-_exporter.export(export_path=static_path/"output_graph", export_data=_graph)
+_exporter = MultiGraphNetworkExporter(
+    basename="base_graph", export_types=["gpkg", "pickle"]
+)
+_exporter.export(export_path=static_path / "output_graph", export_data=_graph)
 
-_exporter = GeoDataFrameNetworkExporter(basename='base_network', export_types=['gpkg', 'pickle'])
-_exporter.export(export_path=static_path/"output_graph", export_data=_gdf)
+_exporter = GeoDataFrameNetworkExporter(
+    basename="base_network", export_types=["gpkg", "pickle"]
+)
+_exporter.export(export_path=static_path / "output_graph", export_data=_gdf)
 
 export_NetworkConfigData(_network_config_data)
 export_AnalysisConfigData(od_analysis)
 
 tree(root_dir)
-

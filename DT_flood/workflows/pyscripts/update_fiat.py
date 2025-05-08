@@ -1,38 +1,47 @@
-import os
-from pathlib import Path
-from sys import argv
-import glob
+"""Script for updating FIAT model."""
 
-from flood_adapt.api import scenarios
-from flood_adapt.object_model.interface.events import Mode
+import argparse
+from pathlib import Path
+
 from DT_flood.utils.fa_scenario_utils import init_scenario
 
-from flood_adapt.object_model.interface.events import Mode
+parser = argparse.ArgumentParser()
+parser.add_argument("--input")
+parser.add_argument("--static")
+parser.add_argument("--output")
+parser.add_argument("--scenario")
+parser.add_argument("--floodmap")
+parser.add_argument("--waterlevelmap")
 
+args = parser.parse_args()
 
-database, scenario = init_scenario(Path(argv[1]), (argv[2]+"_toplevel.toml"))
+# Unpack args
+scenario_name = args.scenario
+database_root = Path(args.input).parent
+floodmap_fn = Path(args.floodmap)
+waterlevel_fn = Path(args.waterlevelmap)
 
-scenario_obj = scenarios.get_scenario(scenario['name'])
+# Fetch FA database, misc
+database, scenario_config = init_scenario(database_root, scenario_name)
+scenario = database.scenarios.get(scenario_config["name"])
+map_type = database.site.attrs.fiat.config.floodmap_type
 
-scenario_obj.init_object_model()
+fa_adpt = database.static.get_fiat_model()
 
-scenario_obj.direct_impacts.hazard.set_simulation_paths()
-scenario_obj.direct_impacts.hazard.write_water_level_map()
-scenario_obj.direct_impacts.hazard.write_floodmap_geotiff()
-scenario_obj.direct_impacts.hazard._get_flood_map_path()
-scenario_obj.direct_impacts.hazard.set_event()
-print(f"Floodmap written to {scenario_obj.direct_impacts.hazard.flood_map_path}")
-print(f"Event mode: {scenario_obj.direct_impacts.hazard.event_mode}")
-print(f"Check if risk: {scenario_obj.direct_impacts.hazard.event_mode == Mode.risk}")
+fa_adpt.add_projection(scenario.projection)
+for measure in scenario.strategy.get_impact_strategy().measures:
+    fa_adpt.add_measure(measure)
 
+if map_type == "water_level":
+    map_fn = waterlevel_fn
+    var = "zsmax"
+elif map_type == "water_depth":
+    map_fn = floodmap_fn
+    var = None
+else:
+    raise ValueError("No Valid Floodmap Type")
 
-print("Preparing FIAT configuration")
-scenario_obj.direct_impacts.preprocess_fiat()
+fa_adpt._model.setup_hazard(map_fn=map_fn, map_type=map_type, var=var, nodata=-999)
 
-fiat_path = scenario_obj.results_path/"Impacts"/"fiat_model"
-hazard_fn, = glob.glob(str(fiat_path/'hazard')+"/*.nc")
-
-print("Fix hazard map naming")
-if "risk" in Path(hazard_fn).name and scenario_obj.direct_impacts.hazard.event_mode == Mode.single_event:
-    Path(hazard_fn).replace(Path(hazard_fn).parent/"hazard_map.nc")
-
+fiat_path = scenario.impacts.impacts_path / "fiat_model"
+fa_adpt.write(path_out=fiat_path)
