@@ -1,16 +1,19 @@
-from sys import argv
-from pathlib import Path
+"""Script for updating offshore SFINCS model."""
+
 from datetime import datetime, timedelta
+from pathlib import Path
 from shutil import copytree
+from sys import argv
+
 import xarray as xr
 from hydromt_sfincs import SfincsModel
 
 from DT_flood.utils.fa_scenario_utils import init_scenario
-from DT_flood.utils.sfincs_utils import (
-    read_flow_boundary_points,
-    read_astro_boundary_conditions,
+from DT_flood.utils.sfincs_utils import (  # type: ignore
     generate_bzs_from_bca,
     process_dt_climate,
+    read_astro_boundary_conditions,
+    read_flow_boundary_points,
 )
 
 database, scenario_config = init_scenario(argv[1], (argv[2] + "_toplevel.toml"))

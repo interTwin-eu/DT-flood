@@ -9,4 +9,6 @@ __pycache__/
 
 **/cache
 
+**/old
+
 linter.log

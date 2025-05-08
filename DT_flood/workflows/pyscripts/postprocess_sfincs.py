@@ -1,10 +1,12 @@
-from pathlib import Path
-import argparse
-import xarray as xr
+"""Script for postprocessing SFINCS run."""
 
+import argparse
+from pathlib import Path
+
+import hydromt_sfincs.utils as utils
+import xarray as xr
 from hydromt.log import setuplog
 from hydromt_sfincs import SfincsModel
-import hydromt_sfincs.utils as utils
 
 from DT_flood.utils.fa_scenario_utils import init_scenario
 

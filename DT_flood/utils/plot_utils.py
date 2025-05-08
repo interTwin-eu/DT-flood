@@ -1,23 +1,24 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import colors
+"""Plot utility functions."""
+
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
 import geopandas as gdp
-from matplotlib.cm import get_cmap
-import matplotlib.patches as mpatches
 import geopandas as gpd
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import colors
+from matplotlib.cm import get_cmap
 
 
 def plot_wflow_model(wflow_model):
-    """Plots WFlow basemap
+    """Plot WFlow basemap.
 
     Parameters
     ----------
     wflow_model : hydromt_wflow.WFlowModel
         Wflow model instance from hydromt_wflow
     """
-
     if "wflow_dem" not in wflow_model.staticmaps:
         wflow_model.read_staticmaps("staticmaps.nc")
 
@@ -77,7 +78,7 @@ def plot_wflow_model(wflow_model):
 
 
 def plot_fiat_model(fiat):
-    """Plots FIAT basemap
+    """Plot FIAT basemap.
 
     Parameters
     ----------
@@ -130,7 +131,7 @@ def plot_fiat_model(fiat):
 
 
 def plot_sfincs_model(sf):
-    """Plots SFINCS basemap
+    """Plot SFINCS basemap.
 
     Parameters
     ----------
@@ -186,13 +187,3 @@ def plot_sfincs_model(sf):
     ax.set_ylabel("Latitude [deg]")
     ax.set_xlabel("Longitude [deg]")
     ax.set_title("SFINCS basemap DEM")
-
-
-def plot_floodmap(scenario):
-    """_summary_
-
-    Parameters
-    ----------
-    scenario : _type_
-        _description_
-    """

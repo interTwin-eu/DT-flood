@@ -1,9 +1,11 @@
+"""Script for postprocessing FIAT run."""
+
 import argparse
 from pathlib import Path
 from shutil import copytree
 
-from flood_adapt.api import scenarios
 from flood_adapt.adapter.fiat_adapter import FiatAdapter
+from flood_adapt.api import scenarios
 
 from DT_flood.utils.fa_scenario_utils import init_scenario
 

@@ -1,6 +1,8 @@
+"""Script for collecting workflow outputs into FloodAdapt database structure."""
+
 import argparse
 from pathlib import Path
-from shutil import copytree, copy, rmtree
+from shutil import copy, copytree, rmtree
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--output")

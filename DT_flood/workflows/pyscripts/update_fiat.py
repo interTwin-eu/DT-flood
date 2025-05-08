@@ -1,8 +1,9 @@
-from pathlib import Path
+"""Script for updating FIAT model."""
+
 import argparse
+from pathlib import Path
 
 from DT_flood.utils.fa_scenario_utils import init_scenario
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input")

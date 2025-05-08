@@ -1,6 +1,8 @@
+"""RA2CE utility functions."""
+
 import os
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 
 def setup_base_folder(root: os.PathLike) -> None:
@@ -24,6 +26,7 @@ def setup_base_folder(root: os.PathLike) -> None:
 
 
 def setup_ra2ce(ra2ce_root: os.PathLike) -> None:
+    """Create RA2CE model through docker container."""
     utils_path = (
         Path(__file__).parents[1] / "workflows" / "pyscripts" / "utils_ra2ce_docker.py"
     )

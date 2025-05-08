@@ -1,11 +1,13 @@
-from pathlib import Path
-from os import makedirs
-from shutil import rmtree
-import argparse
+"""Script for initializing FloodAdapt scenario."""
 
-from DT_flood.utils.fa_scenario_utils import init_scenario, create_scenario
+import argparse
+from os import makedirs
+from pathlib import Path
+from shutil import rmtree
 
 from flood_adapt.object_model.utils import write_finished_file
+
+from DT_flood.utils.fa_scenario_utils import create_scenario, init_scenario
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input")

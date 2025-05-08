@@ -1,11 +1,12 @@
+"""Script to update the Wflow model with a new event."""
+
+from datetime import datetime
 from pathlib import Path
 from sys import argv
-from datetime import datetime
-
-from hydromt.log import setuplog
-from hydromt_wflow import WflowModel
 
 from flood_adapt.object_model.scenario import Scenario
+from hydromt.log import setuplog
+from hydromt_wflow import WflowModel
 
 fa_database_fn = Path(argv[1])
 scenario_fn = fa_database_fn / "input" / "scenarios" / argv[2] / (argv[2] + ".toml")

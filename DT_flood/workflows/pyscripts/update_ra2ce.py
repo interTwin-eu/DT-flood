@@ -1,19 +1,24 @@
+"""Script for updating RA2CE model. Run inside container."""
+
+import argparse
+import tomllib
 from pathlib import Path
 from shutil import copy, copytree, rmtree
-import argparse
-from pyproj import CRS
-import tomllib
-
-from ra2ce.network.network_config_data.network_config_data_reader import (
-    NetworkConfigDataReader,
-)
-from ra2ce.network.network_config_data.network_config_data import HazardSection
-from ra2ce.network.network_config_data.enums.aggregate_wl_enum import AggregateWlEnum
-from ra2ce.analysis.analysis_config_data.analysis_config_data_reader import (
-    AnalysisConfigDataReader,
-)
 
 import utils_ra2ce_docker
+from pyproj import CRS
+from ra2ce.analysis.analysis_config_data.analysis_config_data_reader import (  # type: ignore
+    AnalysisConfigDataReader,
+)
+from ra2ce.network.network_config_data.enums.aggregate_wl_enum import (  # type: ignore
+    AggregateWlEnum,  # type: ignore
+)
+from ra2ce.network.network_config_data.network_config_data import (  # type: ignore
+    HazardSection,  # type: ignore
+)
+from ra2ce.network.network_config_data.network_config_data_reader import (  # type: ignore
+    NetworkConfigDataReader,
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input")

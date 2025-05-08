@@ -1,10 +1,13 @@
+"""Script for triggering OSCAR service."""
+
 import argparse
 import json
 import os
-from minio import Minio
-from oscar_python.client import Client
 import tarfile
 import uuid
+
+from minio import Minio
+from oscar_python.client import Client
 
 parser = argparse.ArgumentParser()
 
@@ -28,6 +31,7 @@ output = variables["output"]
 
 
 def check_oscar_connection():
+    """Check connection to OSCAR client."""
     # Check the service or create it
     print("Checking OSCAR connection status")
     options_basic_auth = {
@@ -48,6 +52,7 @@ def check_oscar_connection():
 
 
 def check_service(client, service, service_directory):
+    """Check OSCAR service existance."""
     print("Checking OSCAR service status")
     try:
         service_info = client.get_service(service)
@@ -83,6 +88,7 @@ def check_service(client, service, service_directory):
 
 
 def connect_minio(minio_info):
+    """Connect to MinIO."""
     # Create client with access and secret key.
     print("Creating connection with MinIO")
     client = Minio(
@@ -94,6 +100,7 @@ def connect_minio(minio_info):
 
 
 def upload_file_minio(client, input_info, input_file):
+    """Upload input files to MinIO."""
     # Upload the file into input bucket
     print("Uploading the file into input bucket")
     random = uuid.uuid4().hex + "_" + input_file.split("/")[-1]
@@ -106,6 +113,7 @@ def upload_file_minio(client, input_info, input_file):
 
 
 def wait_output_and_download(client, output_info, execution_id):
+    """Fetch outputs from MinIO."""
     # Wait the output
     print("Waiting the output")
     with client.listen_bucket_notification(
@@ -130,6 +138,7 @@ def wait_output_and_download(client, output_info, execution_id):
 
 
 def compress():
+    """Compress input files."""
     print("Compressing input")
     files = os.listdir(filename)
     tar_file_ = tarfile.open(filename + ".tar", "w")
@@ -140,6 +149,7 @@ def compress():
 
 
 def decompress(output_file):
+    """Decompress output files."""
     print("Decompressing output")
     with tarfile.open(output_file, "r") as tar:
         for member in tar.getmembers():
