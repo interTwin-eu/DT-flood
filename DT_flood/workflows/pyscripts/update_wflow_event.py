@@ -36,7 +36,7 @@ event_dir = database.input_path / "events" / scenario.event._attrs.name
 wflow_root = database.static_path / "templates" / "wflow"
 wf = WflowModel(
     root=wflow_root,
-    data_libs=scenario_config["event"]["data_catalogues"],
+    data_libs=[],
     mode="r",
     logger=logger,
 )
@@ -46,8 +46,7 @@ starttime = datetime.strptime(
     scenario_config["event"]["start_time"], "%Y-%m-%d %H:%M:%S"
 )
 endtime = datetime.strptime(scenario_config["event"]["end_time"], "%Y-%m-%d %H:%M:%S")
-# precip_fn = scenario_config["event"]["wflow_forcing"]["precip_event"]
-# pet_fn = scenario_config["event"]["wflow_forcing"]["pet_event"]
+
 opt = {
     "setup_config": {
         "starttime": datetime.strftime(starttime, "%Y-%m-%dT%H:%M:%S"),
@@ -60,16 +59,16 @@ opt = {
 
 forcing_config = {
     "setup_precip_forcing": {
-        "precip_fn": event_dir / "precip_event.nc",
+        "precip_fn": (event_dir / "precip_event.nc").as_posix(),
         "precip_clim_fn": None,
     },
     "setup_temp_pet_forcing": {
-        "temp_pet_fn": event_dir / "pet_event.nc",
+        "temp_pet_fn": (event_dir / "pet_event.nc").as_posix(),
         "press_correction": True,
         "temp_correction": True,
         "pet_method": "debruin",
         "skip_pet": False,
-        "dem_forcing_fn": scenario_config["event"]["wflow_forcing"]["orography"],
+        "dem_forcing_fn": (event_dir / "orography.nc").as_posix(),
     },
 }
 opt.update(forcing_config)

@@ -1,11 +1,14 @@
+"""Script for triggering OSCAR service."""
+
 import argparse
 import json
-import requests
 import os
-from minio import Minio
-from oscar_python.client import Client
 import tarfile
 import uuid
+
+import requests
+from minio import Minio
+from oscar_python.client import Client
 
 parser = argparse.ArgumentParser()
 
@@ -54,6 +57,7 @@ elif args.refreshtoken:
 
 
 def check_oscar_connection():
+    """Check connection to OSCAR client."""
     # Check the service or create it
     print("Checking OSCAR connection status")
     if user and password:
@@ -89,12 +93,11 @@ def check_oscar_connection():
 
 
 def check_service(client, service, service_directory):
+    """Check OSCAR service existance."""
     print("Checking OSCAR service status")
     try:
         service_info = client.get_service(service)
-        minio_info = json.loads(service_info.text)["storage_providers"]["minio"][
-            "default"
-        ]
+        minio_info = json.load(client.get_cluster_config().text)["minio_provider"]
         input_info = json.loads(service_info.text)["input"][0]
         output_info = json.loads(service_info.text)["output"][0]
         if service_info.status_code == 200:
@@ -120,9 +123,7 @@ def check_service(client, service, service_directory):
             print(err)
         os.remove(oscar_service_directory + "_tmp.yaml")
         service_info = client.get_service(service)
-        minio_info = json.loads(service_info.text)["storage_providers"]["minio"][
-            "default"
-        ]
+        minio_info = json.loads(client.get_cluster_config().text)["minio_provider"]
         input_info = json.loads(service_info.text)["input"][0]
         output_info = json.loads(service_info.text)["output"][0]
         print("OSCAR Service " + service + " created")
@@ -130,6 +131,7 @@ def check_service(client, service, service_directory):
 
 
 def connect_minio(minio_info):
+    """Connect to MinIO."""
     # Create client with access and secret key.
     print("Creating connection with MinIO")
     client = Minio(
@@ -141,6 +143,7 @@ def connect_minio(minio_info):
 
 
 def upload_file_minio(client, input_info, input_file):
+    """Upload input files to MinIO."""
     # Upload the file into input bucket
     print("Uploading the file into input bucket")
     random = uuid.uuid4().hex + "_" + input_file.split("/")[-1]
@@ -155,6 +158,7 @@ def upload_file_minio(client, input_info, input_file):
 
 
 def wait_output_and_download(client, output_info, execution_id):
+    """Fetch outputs from MinIO."""
     # Wait the output
     print("Waiting the output")
     with client.listen_bucket_notification(
@@ -179,6 +183,7 @@ def wait_output_and_download(client, output_info, execution_id):
 
 
 def compress():
+    """Compress input files."""
     print("Compressing input")
     files = os.listdir(filename)
     tar_file_ = tarfile.open(filename + ".tar", "w")
@@ -189,6 +194,7 @@ def compress():
 
 
 def decompress(output_file):
+    """Decompress output files."""
     print(f"Decompressing output {output_file}")
     with tarfile.open(output_file, "r") as tar:
         for member in tar.getmembers():

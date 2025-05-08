@@ -1,11 +1,12 @@
 """Utils functions for setting up FloodAdapt objects."""
 
 import os
-import shutil
 from pathlib import Path
 from typing import Union
 
 import geopandas as gpd
+import hydromt  # noqa: F401
+import pandas as pd
 import tomli
 from flood_adapt.api import events, measures, projections, scenarios, static, strategies
 from flood_adapt.dbs_classes.interface.database import IDatabase
@@ -16,7 +17,11 @@ from flood_adapt.object_model.interface.projections import IProjection
 from flood_adapt.object_model.interface.scenarios import IScenario
 from flood_adapt.object_model.interface.strategies import IStrategy
 
-from DT_flood.utils.data_utils import get_dataset_names, get_event_forcing_data
+from DT_flood.utils.data_utils import (
+    get_dataset_names,
+    get_event_forcing_data,
+    get_gtsm_forcing_data,
+)
 
 
 def tree(directory):
@@ -213,17 +218,23 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
         Only supports HistoricalNearshore event types
     """
     forcing_vars = {
-        "meteo": ["precip", "wind10_u", "wind10_v"],
+        "meteo": ["precip", "wind10_u", "wind10_v", "press_msl"],
         "wind": ["wind10_u", "wind10_v"],
         "rainfall": ["precip"],
         "waterlevel": ["waterlevel"],
-        "wflow": ["kin", "kout", "temp", "press_msl"],
+        "wflow": ["kin", "kout", "temp", "press_msl", "precip"],
+        "orography": ["elevtn"],
     }
 
     units = UnitSystem("metric")
 
     start_time = scenario_config["event"]["start_time"]
     end_time = scenario_config["event"]["end_time"]
+
+    start_warmup = (pd.to_datetime(start_time) - pd.DateOffset(years=1)).strftime(
+        "%Y-%m-%d %H:%M:%S"
+    )
+
     event_name = scenario_config["event"]["name"]
 
     sf_bounds = database.static.get_model_boundary().to_crs(4326).total_bounds
@@ -233,7 +244,7 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
             / "templates"
             / "wflow"
             / "staticgeoms"
-            / "region.geosjon"
+            / "region.geojson"
         )
         .to_crs(4326)
         .total_bounds
@@ -260,15 +271,29 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
             raise ValueError(
                 f"Dataset {scenario_config['event']['sfincs_forcing'][forcing]} not in dataset names: {dataset_names}"
             )
-        ds = get_event_forcing_data(
-            dataset=scenario_config["event"]["sfincs_forcing"][forcing],
-            start_date=start_time,
-            end_date=end_time,
-            data_vars=forcing_vars[forcing],
-            bounds=sf_bounds,
-        )
-        ds.to_netcdf(data_folder / f"{forcing}.nc")
-        shutil.copy(data_folder / f"{forcing}.nc", event_folder / f"{forcing}.nc")
+        print(f"Getting {forcing} data")
+        if "waterlevel" in forcing:
+            ds = get_gtsm_forcing_data(
+                dataset=scenario_config["event"]["sfincs_forcing"][forcing],
+                start_date=start_time,
+                end_date=end_time,
+                data_vars=forcing_vars[forcing],
+                bounds=sf_bounds,
+            )
+            ds.to_netcdf(event_folder / f"{forcing}.nc")
+        else:
+            ds = get_event_forcing_data(
+                dataset=scenario_config["event"]["sfincs_forcing"][forcing],
+                start_date=start_time,
+                end_date=end_time,
+                data_vars=forcing_vars[forcing],
+                bounds=sf_bounds,
+            )
+            if "latitude" in ds.coords:
+                ds = ds.rename({"latitude": "lat"})
+            if "longitude" in ds.coords:
+                ds = ds.rename({"longitude": "lon"})
+            ds.to_netcdf(data_folder / f"{forcing}.nc")
 
     # Get WFlow forcing data
     for forcing in scenario_config["event"]["wflow_forcing"]:
@@ -276,15 +301,23 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
             raise ValueError(
                 f"Dataset {scenario_config['event']['wflow_forcing'][forcing]} not in dataset names: {dataset_names}"
             )
+        print(f"Getting {forcing} data")
+        print(
+            forcing_vars["wflow"]
+            if "orography" not in forcing
+            else forcing_vars["orography"]
+        )
         ds = get_event_forcing_data(
             dataset=scenario_config["event"]["wflow_forcing"][forcing],
-            start_date=start_time,
-            end_date=end_time,
-            data_vars=forcing_vars["wflow"],
+            start_date=start_warmup if "warmup" in forcing else start_time,
+            end_date=start_time if "warmup" in forcing else end_time,
+            data_vars=forcing_vars["wflow"]
+            if "orography" not in forcing
+            else forcing_vars["orography"],
             bounds=wf_bounds,
         )
-        ds.to_netcdf(data_folder / f"{forcing}.nc")
-        shutil.copy(data_folder / f"{forcing}.nc", event_folder / f"{forcing}.nc")
+
+        ds.to_netcdf(event_folder / f"{forcing}.nc")
 
     # # Set meteo forcing type
     # if scenario_config["event"]["data_catalogues"]:
@@ -318,15 +351,19 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
     #     if "rainfall" in scenario_config["event"]["sfincs_forcing"].keys():
     #         rain_fn = scenario_config["event"]["sfincs_forcing"]["rainfall"]
 
-    if (event_folder / "meteo.nc").exists():
-        wind_forcing = wind.WindNetCDF(unit=units.velocity, path="meteo.nc")
-        rain_forcing = rainfall.RainfallNetCDF(unit=units.intensity, path="meteo.nc")
+    if (data_folder / "meteo.nc").exists():
+        wind_forcing = wind.WindNetCDF(
+            unit=units.velocity, path=data_folder / "meteo.nc"
+        )
+        rain_forcing = rainfall.RainfallNetCDF(
+            unit=units.intensity, path=data_folder / "meteo.nc"
+        )
         forcings["WIND"] = [wind_forcing]
         forcings["RAINFALL"] = [rain_forcing]
-    if (event_folder / "wind.nc").exists():
+    if (data_folder / "wind.nc").exists():
         wind_forcing = wind.WindNetCDF(unit=units.velocity, path="wind.nc")
         forcings["WIND"] = [wind_forcing]
-    if (event_folder / "rainfall.nc").exists():
+    if (data_folder / "rainfall.nc").exists():
         rain_forcing = rainfall.RainfallNetCDF(unit=units.intensity, path="rainfall.nc")
 
     event_dict = {

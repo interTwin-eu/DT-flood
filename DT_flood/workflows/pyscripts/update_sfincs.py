@@ -1,8 +1,10 @@
-from pathlib import Path
-from datetime import datetime
-import xarray as xr
-import argparse
+"""Script for updating sfincs model for FloodAdapt event."""
 
+import argparse
+from datetime import datetime
+from pathlib import Path
+
+import xarray as xr
 from hydromt.log import setuplog
 from hydromt_sfincs import SfincsModel
 from hydromt_sfincs.sfincs_input import SfincsInput
@@ -43,9 +45,7 @@ sfincs_path = (
     / "simulations"
     / database.site.attrs.sfincs.config.overland_model
 )
-sf = SfincsModel(
-    root=sfincs_path, mode="r", data_libs=event["data_catalogues"], logger=logger
-)
+sf = SfincsModel(root=sfincs_path, mode="r", data_libs=[], logger=logger)
 sf.read()
 
 if "waterlevel" in event["sfincs_forcing"]:
