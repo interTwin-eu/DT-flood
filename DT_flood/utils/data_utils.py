@@ -1,6 +1,7 @@
 """Util functions for data IO."""
 
 from pathlib import Path
+from shutil import rmtree
 
 import hydromt  # noqa: F401
 import pandas as pd
@@ -112,6 +113,7 @@ def get_event_forcing_data(
     data_vars: list,
     bounds: list,
     rucio_scope: str = "wtromp",
+    cleanup=True,
 ):
     """
     Get forcing data for a specific event from Rucio.
@@ -149,6 +151,7 @@ def get_event_forcing_data(
         data_list,
         combine="nested",
     )
+    ds_full.close()
 
     ds_full = ds_full.sortby("longitude")
     ds_full = ds_full.sortby("latitude")
@@ -164,6 +167,11 @@ def get_event_forcing_data(
     if len(ds_clip.time) > 1:
         print("slicing time")
         ds_clip = ds_clip.sel(time=slice(start_date, end_date))
+
+    if cleanup:
+        ds_clip.load()
+        rmtree(rucio_scope)
+
     return ds_clip
 
 
@@ -174,6 +182,7 @@ def get_gtsm_forcing_data(
     data_vars: list,
     bounds: list,
     rucio_scope: str = "wtromp",
+    cleanup: bool = True,
 ):
     """Get GTSM data from Rucio.
 
@@ -210,8 +219,14 @@ def get_gtsm_forcing_data(
         data_list,
         combine="nested",
     )
+    ds_full.close()
+
     dc = DataCatalog()
 
     ds_clip = dc.get_geodataset(ds_full, bbox=bounds, time_tuple=(start_date, end_date))
+
+    if cleanup:
+        ds_clip.load()
+        rmtree(rucio_scope)
 
     return ds_clip

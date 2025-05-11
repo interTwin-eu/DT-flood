@@ -65,6 +65,23 @@ def create_systems_folder(database_path: Path):
     sfincs_path.touch()
 
 
+def get_database(database_path):
+    """Get database object."""
+    if not (database_path / "system").exists():
+        create_systems_folder(database_path)
+
+    Settings(
+        DATABASE_ROOT=database_path.parent,
+        DATABASE_NAME=database_path.stem,
+        SYSTEM_FOLDER=database_path / "system",
+        DELETE_CRASHED_RUNS=False,
+        VALIDATE_ALLOWED_FORCINGS=False,
+    )
+    db = FloodAdapt(database_path=database_path)
+
+    return db
+
+
 def init_scenario(
     database_path: Union[str, os.PathLike], scenario_name: str
 ) -> tuple[IDatabase, dict]:
@@ -97,17 +114,7 @@ def init_scenario(
         / (scenario_name + "_toplevel.toml")
     )
 
-    if not (database_path / "system").exists():
-        create_systems_folder(database_path)
-
-    Settings(
-        DATABASE_ROOT=database_path.parent,
-        DATABASE_NAME=database_path.stem,
-        SYSTEM_FOLDER=database_path / "system",
-        DELETE_CRASHED_RUNS=False,
-        VALIDATE_ALLOWED_FORCINGS=False,
-    )
-    db = FloodAdapt(database_path=database_path)
+    db = get_database(database_path=database_path)
 
     with open(scenario_path, "rb") as f:
         scenario = tomli.load(f)
@@ -161,7 +168,14 @@ def create_scenario(database: FloodAdapt, scenario_config: dict):
         return database.get_scenario(scenario_config["name"])
 
 
-def create_event(database: FloodAdapt, scenario_config: dict):
+def create_event(
+    database: FloodAdapt,
+    name: str,
+    start_time: str,
+    end_time: str,
+    sf_forcings: dict = None,
+    wf_forcings: dict = None,
+):
     """Check if event already exists.
 
     If not, create it and save config file. If yes, return Event object of pre-existing event config
@@ -179,17 +193,34 @@ def create_event(database: FloodAdapt, scenario_config: dict):
         FloodAdapt Event object
     """
     # Load existing events
+    if sf_forcings is None:
+        sf_forcings = {"meteo": "era5_hourly", "waterlevel": "gtsm_hourly"}
+    if wf_forcings is None:
+        wf_forcings = {
+            "precip_warmup": "era5_daily",
+            "pet_warmup": "era5_daily",
+            "precip_event": "era5_hourly",
+            "pet_event": "era5_hourly",
+            "orography": "era5_orography",
+        }
     events_existing = database.get_events()
     # If necessary create new event, save it and return object, otherwise load existing and return object
-    if scenario_config["event"]["name"] not in events_existing["name"]:
-        event_new = create_event_config(database, scenario_config)
+    if name not in events_existing["name"]:
+        event_dict = {
+            "name": name,
+            "start_time": start_time,
+            "end_time": end_time,
+            "sfincs_forcing": sf_forcings,
+            "wflow_forcing": wf_forcings,
+        }
+        event_new = create_event_config(database, event_dict)
         database.save_event(event_new)
         return event_new
     else:
-        return database.get_event(scenario_config["event"]["name"])
+        return database.get_event(name)
 
 
-def create_event_config(database: FloodAdapt, scenario_config: dict):
+def create_event_config(database: FloodAdapt, event_dict: dict):
     """Create FloodAdapt Event object from scenario configuration.
 
     Parameters
@@ -218,17 +249,19 @@ def create_event_config(database: FloodAdapt, scenario_config: dict):
         "orography": ["elevtn"],
     }
 
-    # units = UnitSystems("metric")
     units = database.database.site.gui.units
 
-    start_time = scenario_config["event"]["start_time"]
-    end_time = scenario_config["event"]["end_time"]
+    start_time = event_dict["start_time"]
+    end_time = event_dict["end_time"]
 
     start_warmup = (pd.to_datetime(start_time) - pd.DateOffset(years=1)).strftime(
         "%Y-%m-%d %H:%M:%S"
     )
 
-    event_name = scenario_config["event"]["name"]
+    event_name = event_dict["name"]
+
+    sf_forcings = event_dict["sfincs_forcing"]
+    wf_forcings = event_dict["wflow_forcing"]
 
     sf_bounds = database.get_model_boundary().to_crs(4326).total_bounds
     wf_bounds = (
@@ -256,27 +289,28 @@ def create_event_config(database: FloodAdapt, scenario_config: dict):
     forcings = {}
 
     # Get SFINCS forcing data
-    for forcing in scenario_config["event"]["sfincs_forcing"]:
+    for forcing in sf_forcings:
         if forcing not in forcing_vars:
             print(f"Warning: {forcing} not in forcing_vars, skipping {forcing}")
             continue
-        if scenario_config["event"]["sfincs_forcing"][forcing] not in dataset_names:
+        if sf_forcings[forcing] not in dataset_names:
             raise ValueError(
-                f"Dataset {scenario_config['event']['sfincs_forcing'][forcing]} not in dataset names: {dataset_names}"
+                f"Dataset {sf_forcings[forcing]} not in dataset names: {dataset_names}"
             )
         print(f"Getting {forcing} data")
         if "waterlevel" in forcing:
             ds = get_gtsm_forcing_data(
-                dataset=scenario_config["event"]["sfincs_forcing"][forcing],
+                dataset=sf_forcings[forcing],
                 start_date=start_time,
                 end_date=end_time,
                 data_vars=forcing_vars[forcing],
                 bounds=sf_bounds,
             )
             ds.to_netcdf(event_folder / f"{forcing}.nc")
+            del ds
         else:
             ds = get_event_forcing_data(
-                dataset=scenario_config["event"]["sfincs_forcing"][forcing],
+                dataset=sf_forcings[forcing],
                 start_date=start_time,
                 end_date=end_time,
                 data_vars=forcing_vars[forcing],
@@ -286,13 +320,15 @@ def create_event_config(database: FloodAdapt, scenario_config: dict):
                 ds = ds.rename({"latitude": "lat"})
             if "longitude" in ds.coords:
                 ds = ds.rename({"longitude": "lon"})
+
             ds.to_netcdf(data_folder / f"{forcing}.nc")
+            del ds
 
     # Get WFlow forcing data
-    for forcing in scenario_config["event"]["wflow_forcing"]:
-        if scenario_config["event"]["wflow_forcing"][forcing] not in dataset_names:
+    for forcing in wf_forcings:
+        if wf_forcings[forcing] not in dataset_names:
             raise ValueError(
-                f"Dataset {scenario_config['event']['wflow_forcing'][forcing]} not in dataset names: {dataset_names}"
+                f"Dataset {wf_forcings[forcing]} not in dataset names: {dataset_names}"
             )
         print(f"Getting {forcing} data")
         print(
@@ -301,7 +337,7 @@ def create_event_config(database: FloodAdapt, scenario_config: dict):
             else forcing_vars["orography"]
         )
         ds = get_event_forcing_data(
-            dataset=scenario_config["event"]["wflow_forcing"][forcing],
+            dataset=wf_forcings[forcing],
             start_date=start_warmup if "warmup" in forcing else start_time,
             end_date=start_time if "warmup" in forcing else end_time,
             data_vars=forcing_vars["wflow"]
@@ -309,8 +345,8 @@ def create_event_config(database: FloodAdapt, scenario_config: dict):
             else forcing_vars["orography"],
             bounds=wf_bounds,
         )
-
         ds.to_netcdf(event_folder / f"{forcing}.nc")
+        del ds
 
     if (data_folder / "meteo.nc").exists():
         wind_forcing = wind.WindNetCDF(
