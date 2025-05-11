@@ -381,7 +381,14 @@ def create_event_config(database: FloodAdapt, event_dict: dict):
     return database.create_event(attrs=event_dict)
 
 
-def create_projection(database: FloodAdapt, scenario_config: dict):
+def create_projection(
+    database: FloodAdapt,
+    name: str,
+    sea_level_rise: float = None,
+    rainfall_increase: float = None,
+    population_growth: float = None,
+    economic_growth: float = None,
+):
     """Check if projection already exists.
 
     If not, create it and save config file. If yes, return Projection object of pre-existing projection config
@@ -402,15 +409,29 @@ def create_projection(database: FloodAdapt, scenario_config: dict):
     projections_existing = database.get_projections()
 
     # If necessary create new projection, save it and return object, otherwise load existing and return object
-    if scenario_config["projection"]["name"] not in projections_existing["name"]:
-        projection_new = create_projection_config(database, scenario_config)
+    if name not in projections_existing["name"]:
+        projection_new = create_projection_config(
+            database,
+            name=name,
+            sea_level_rise=sea_level_rise,
+            rainfall_increase=rainfall_increase,
+            population_growth=population_growth,
+            economic_growth=economic_growth,
+        )
         database.save_projection(projection_new)
         return projection_new
     else:
-        return database.get_projection(scenario_config["projection"]["name"])
+        return database.get_projection(name)
 
 
-def create_projection_config(database: FloodAdapt, scenario_config: dict):
+def create_projection_config(
+    database: FloodAdapt,
+    name: str,
+    sea_level_rise: float,
+    rainfall_increase: float,
+    population_growth: float,
+    economic_growth: float,
+):
     """Create FloodAdapt Projection object from scenario configuration.
 
     Parameters
@@ -427,48 +448,32 @@ def create_projection_config(database: FloodAdapt, scenario_config: dict):
     """
     # General projection config
     projection_dict = {
-        "name": scenario_config["projection"]["name"],
-        "description": f"Projection generated from toplevel {scenario_config['name']} config file",
+        "name": name,
+        "description": f"Projection generated from toplevel {name} config file",
     }
 
     # Physical projection config
     phys_dict = {}
-    for name in scenario_config["projection"]["physical_projection"]:
-        if name == "sea_level_rise" or name == "subsidence":
-            phys_dict.update(
-                {
-                    name: {
-                        "value": scenario_config["projection"]["physical_projection"][
-                            name
-                        ],
-                        "units": "meters",
-                    }
+    if sea_level_rise is not None:
+        phys_dict.update(
+            {
+                "sea_level_rise": {
+                    "value": sea_level_rise,
+                    "units": database.database.site.gui.units.default_length_units,
                 }
-            )
-        else:
-            phys_dict.update(
-                {name: scenario_config["projection"]["physical_projection"][name]}
-            )
+            }
+        )
+    if rainfall_increase is not None:
+        phys_dict.update({"rainfall_increase": rainfall_increase})
     projection_dict.update({"physical_projection": phys_dict})
 
     # Socio-Economic config
     sec_dict = {}
-    for name in scenario_config["projection"]["socio_economic_change"]:
-        if name == "new_development_elevation":
-            sec_dict.update(
-                {
-                    name: {
-                        "value": scenario_config["projection"]["socio_economic_change"][
-                            name
-                        ],
-                        "units": "meters",
-                    }
-                }
-            )
-        else:
-            sec_dict.update(
-                {name: scenario_config["projection"]["socio_economic_change"][name]}
-            )
+
+    if population_growth is not None:
+        sec_dict.update({"population_growth_existing": population_growth})
+    if economic_growth is not None:
+        sec_dict.update({"economic_growth": economic_growth})
     projection_dict.update({"socio_economic_change": sec_dict})
 
     return database.create_projection(attrs=projection_dict)
