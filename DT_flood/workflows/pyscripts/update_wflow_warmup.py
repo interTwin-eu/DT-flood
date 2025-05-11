@@ -24,9 +24,14 @@ database_root = Path(args.input).parent
 
 # unpack FA database, scenario, event description
 database, scenario_config = init_scenario(database_root, scenario_name)
+database = database.database
 scenario = database.scenarios.get(scenario_config["name"])
+
+results_path = database.scenarios.output_path.joinpath(scenario.name)
+
+
 event = scenario_config["event"]
-event_dir = database.input_path / "events" / scenario.event._attrs.name
+event_dir = database.input_path / "events" / scenario.event
 
 # wflow template model
 wflow_root = database.static_path / "templates" / "wflow"
@@ -68,7 +73,7 @@ forcing_config = {
 }
 opt.update(forcing_config)
 
-wf_warmup_root = scenario.results_path / "Flooding" / "simulations" / "wflow_warmup"
+wf_warmup_root = results_path / "Flooding" / "simulations" / "wflow_warmup"
 wf.set_root(wf_warmup_root, mode="w+")
 wf.update(wf_warmup_root, opt=opt, write=False)
 wf.write()

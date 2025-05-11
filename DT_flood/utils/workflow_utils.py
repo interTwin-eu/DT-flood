@@ -82,6 +82,8 @@ def create_workflow_config(
     if isinstance(database, str) or isinstance(database, Path):
         database, _ = init_scenario(database, scenario)
 
+    database = database.database
+
     if not isinstance(cwl_workflow, Path):
         cwl_workflow = Path(cwl_workflow)
     if not cwl_workflow.exists():
@@ -155,6 +157,8 @@ def run_fa_scenario_workflow(
     """
     if isinstance(database, str) or isinstance(database, Path):
         database, _ = init_scenario(database, scenario)
+
+    database = database.database
 
     workflow_fn = WORFKFLOW_DIR / "run_fa_scenario.cwl"
     config_fn = (

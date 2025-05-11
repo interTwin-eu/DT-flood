@@ -28,8 +28,15 @@ wflow_dir = Path(args.wflowdir)
 
 # unpack FA database, scenario, event description
 database, scenario_config = init_scenario(database_root, scenario_name)
+database = database.database
 scenario = database.scenarios.get(scenario_config["name"])
-event = scenario_config["event"]
+
+results_path = database.scenarios.output_path.joinpath(scenario.name)
+
+event_dict = scenario_config["event"]
+event = database.events.get(scenario.event)
+projection = database.projections.get(scenario.projection)
+strategy = database.strategies.get(scenario.strategy)
 
 start_time = datetime.strptime(
     scenario_config["event"]["start_time"], "%Y-%m-%d %H:%M:%S"
@@ -37,22 +44,36 @@ start_time = datetime.strptime(
 end_time = datetime.strptime(scenario_config["event"]["end_time"], "%Y-%m-%d %H:%M:%S")
 
 sf_adpt = database.static.get_overland_sfincs_model()
-sf_adpt.preprocess(scenario)
 
 sfincs_path = (
-    scenario.results_path
+    results_path
     / "Flooding"
     / "simulations"
-    / database.site.attrs.sfincs.config.overland_model
+    / database.site.sfincs.config.overland_model.name
 )
-sf = SfincsModel(root=sfincs_path, mode="r", data_libs=[], logger=logger)
+
+sf_adpt.set_timing(event.time)
+for forcing in event.get_forcings():
+    sf_adpt.add_forcing(forcing)
+
+if sf_adpt.rainfall is not None:
+    sf_adpt.rainfall *= event.rainfall_multiplier
+
+for measure in strategy.get_hazard_measures():
+    sf_adpt.add_measure(measure)
+
+sf_adpt.add_projection(projection)
+
+sf_adpt.write(path_out=sfincs_path)
+
+sf = SfincsModel(root=sfincs_path, mode="r", logger=logger)
 sf.read()
 
-if "waterlevel" in event["sfincs_forcing"]:
-    h_fn = database.input_path / "events" / event["name"] / "waterlevel.nc"
-    slr = scenario.projection.get_physical_projection().attrs.sea_level_rise.value
+if "waterlevel" in event_dict["sfincs_forcing"]:
+    h_fn = database.input_path / "events" / event_dict["name"] / "waterlevel.nc"
+    slr = projection.physical_projection.sea_level_rise.value
     ds_h = xr.open_dataset(h_fn)
-    sf.setup_waterlevel_forcing(geodataset=(ds_h["waterlevel"] + slr))
+    sf.setup_waterlevel_forcing(geodataset=(ds_h + slr))
 
 inp = SfincsInput.from_file(sfincs_path / "sfincs.inp")
 config = inp.to_dict()

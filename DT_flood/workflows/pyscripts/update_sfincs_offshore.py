@@ -17,12 +17,14 @@ from DT_flood.utils.sfincs_utils import (  # type: ignore
 )
 
 database, scenario_config = init_scenario(argv[1], (argv[2] + "_toplevel.toml"))
+database = database.database
 scenario = database.scenarios.get(scenario_config["name"])
 
-sf_template = (
-    database.static_path / "templates" / database.site.attrs.sfincs.offshore_model
-)
-sfincs_out_path = scenario.results_path / "Flooding" / "simulations" / "offshore"
+results_path = database.scenarios.output_path.joinpath(scenario.name)
+
+
+sf_template = database.static_path / "templates" / database.site.sfincs.offshore_model
+sfincs_out_path = results_path / "Flooding" / "simulations" / "offshore"
 
 start_time = datetime.strptime(
     scenario_config["event"]["start_time"], "%Y-%m-%d %H:%M:%S"

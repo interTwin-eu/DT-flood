@@ -8,14 +8,10 @@ import geopandas as gpd
 import hydromt  # noqa: F401
 import pandas as pd
 import tomli
-from flood_adapt.api import events, measures, projections, scenarios, static, strategies
+from flood_adapt.config.config import Settings
 from flood_adapt.dbs_classes.interface.database import IDatabase
-from flood_adapt.misc.config import Settings, UnitSystem
-from flood_adapt.object_model.hazard.forcing import rainfall, wind
-from flood_adapt.object_model.hazard.interface.events import IEvent
-from flood_adapt.object_model.interface.projections import IProjection
-from flood_adapt.object_model.interface.scenarios import IScenario
-from flood_adapt.object_model.interface.strategies import IStrategy
+from flood_adapt.flood_adapt import FloodAdapt
+from flood_adapt.objects.forcing import rainfall, wind
 
 from DT_flood.utils.data_utils import (
     get_dataset_names,
@@ -101,8 +97,6 @@ def init_scenario(
         / (scenario_name + "_toplevel.toml")
     )
 
-    units = UnitSystem(system="metric")
-
     if not (database_path / "system").exists():
         create_systems_folder(database_path)
 
@@ -111,19 +105,17 @@ def init_scenario(
         DATABASE_NAME=database_path.stem,
         SYSTEM_FOLDER=database_path / "system",
         DELETE_CRASHED_RUNS=False,
-        unit_system=units,
         VALIDATE_ALLOWED_FORCINGS=False,
     )
-    db = static.read_database(
-        database_path=database_path.parent, site_name=database_path.stem
-    )
+    db = FloodAdapt(database_path=database_path)
+
     with open(scenario_path, "rb") as f:
         scenario = tomli.load(f)
 
     return db, scenario
 
 
-def create_scenario_config(database: IDatabase, scenario_config: dict) -> IScenario:
+def create_scenario_config(database: FloodAdapt, scenario_config: dict):
     """Create FloodAdapt Scenario object from scenario configuration."""
     scenario_dict = {
         "name": scenario_config["name"],
@@ -132,10 +124,10 @@ def create_scenario_config(database: IDatabase, scenario_config: dict) -> IScena
         "projection": scenario_config["projection"]["name"],
         "strategy": scenario_config["strategy"]["name"],
     }
-    return scenarios.create_scenario(attrs=scenario_dict)
+    return database.create_scenario(attrs=scenario_dict)
 
 
-def create_scenario(database: IDatabase, scenario_config: dict) -> IScenario:
+def create_scenario(database: FloodAdapt, scenario_config: dict):
     """Check if scenario already exists.
 
     If not, create it and save config file. If yes, return Scenario object of pre-existing event config.
@@ -158,18 +150,18 @@ def create_scenario(database: IDatabase, scenario_config: dict) -> IScenario:
     _ = create_strategy(database=database, scenario_config=scenario_config)
 
     # Load existing scenarios
-    scenarios_existing = scenarios.get_scenarios()
+    scenarios_existing = database.get_scenarios()
 
     # If necessary create new scenario, save it and return object, otherwise load existing and return object
     if scenario_config["name"] not in scenarios_existing["name"]:
         scenario_new = create_scenario_config(database, scenario_config)
-        scenarios.save_scenario(scenario_new)
+        database.save_scenario(scenario_new)
         return scenario_new
     else:
-        return scenarios.get_scenario(scenario_config["name"])
+        return database.get_scenario(scenario_config["name"])
 
 
-def create_event(database: IDatabase, scenario_config: dict) -> IEvent:
+def create_event(database: FloodAdapt, scenario_config: dict):
     """Check if event already exists.
 
     If not, create it and save config file. If yes, return Event object of pre-existing event config
@@ -187,17 +179,17 @@ def create_event(database: IDatabase, scenario_config: dict) -> IEvent:
         FloodAdapt Event object
     """
     # Load existing events
-    events_existing = events.get_events()
+    events_existing = database.get_events()
     # If necessary create new event, save it and return object, otherwise load existing and return object
     if scenario_config["event"]["name"] not in events_existing["name"]:
         event_new = create_event_config(database, scenario_config)
-        events.save_event(event_new)
+        database.save_event(event_new)
         return event_new
     else:
-        return events.get_event(scenario_config["event"]["name"])
+        return database.get_event(scenario_config["event"]["name"])
 
 
-def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
+def create_event_config(database: FloodAdapt, scenario_config: dict):
     """Create FloodAdapt Event object from scenario configuration.
 
     Parameters
@@ -226,7 +218,8 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
         "orography": ["elevtn"],
     }
 
-    units = UnitSystem("metric")
+    # units = UnitSystems("metric")
+    units = database.database.site.gui.units
 
     start_time = scenario_config["event"]["start_time"]
     end_time = scenario_config["event"]["end_time"]
@@ -237,10 +230,10 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
 
     event_name = scenario_config["event"]["name"]
 
-    sf_bounds = database.static.get_model_boundary().to_crs(4326).total_bounds
+    sf_bounds = database.get_model_boundary().to_crs(4326).total_bounds
     wf_bounds = (
         gpd.read_file(
-            database.static_path
+            database.database.static_path
             / "templates"
             / "wflow"
             / "staticgeoms"
@@ -252,11 +245,11 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
 
     dataset_names = get_dataset_names()
 
-    event_folder = database.base_path / "input" / "events" / event_name
+    event_folder = database.database.base_path / "input" / "events" / event_name
     if not event_folder.exists():
         event_folder.mkdir(parents=True)
 
-    data_folder = database.base_path / "data" / event_name
+    data_folder = database.database.base_path / "data" / event_name
     if not data_folder.exists():
         data_folder.mkdir(parents=True)
 
@@ -319,52 +312,24 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
 
         ds.to_netcdf(event_folder / f"{forcing}.nc")
 
-    # # Set meteo forcing type
-    # if scenario_config["event"]["data_catalogues"]:
-    #     dc = DataCatalog(scenario_config["event"]["data_catalogues"])
-
-    #     if "meteo" in scenario_config["event"]["sfincs_forcing"].keys():
-    #         meteo_key = scenario_config["event"]["sfincs_forcing"]["meteo"]
-    #         ds = dc.get_rasterdataset(meteo_key, time_tuple=(start_time, end_time))
-    #         meteo_fn = data_folder / "meteo.nc"
-    #         ds.to_netcdf(meteo_fn)
-    #         shutil.copy(meteo_fn, event_folder / "meteo.nc")
-    #     if "wind" in scenario_config["event"]["sfincs_forcing"].keys():
-    #         wind_key = scenario_config["event"]["sfincs_forcing"]["wind"]
-    #         ds = dc.get_rasterdataset(wind_key, time_tuple=(start_time, end_time))
-    #         wind_fn = data_folder / "wind.nc"
-    #         ds.to_netcdf(wind_fn)
-    #         shutil.copy(wind_fn, event_folder / "wind.nc")
-    #     if "rainfall" in scenario_config["event"]["sfincs_forcing"].keys():
-    #         rainfall_key = scenario_config["event"]["sfincs_forcing"]["rainfall"]
-    #         ds = dc.get_rasterdataset(rainfall_key, time_tuple=(start_time, end_time))
-    #         rain_fn = data_folder / "rainfall.nc"
-    #         ds.to_netcdf(rain_fn)
-    #         shutil.copy(rain_fn, event_folder / "rainfall.nc")
-    # else:
-    #     if "meteo" in scenario_config["event"]["sfincs_forcing"].keys():
-    #         meteo_fn = scenario_config["event"]["sfincs_forcing"]["meteo"]
-
-    #     if "wind" in scenario_config["event"]["sfincs_forcing"].keys():
-    #         wind_fn = scenario_config["event"]["sfincs_forcing"]["wind"]
-
-    #     if "rainfall" in scenario_config["event"]["sfincs_forcing"].keys():
-    #         rain_fn = scenario_config["event"]["sfincs_forcing"]["rainfall"]
-
     if (data_folder / "meteo.nc").exists():
         wind_forcing = wind.WindNetCDF(
-            unit=units.velocity, path=data_folder / "meteo.nc"
+            unit=units.default_velocity_units, path=data_folder / "meteo.nc"
         )
         rain_forcing = rainfall.RainfallNetCDF(
-            unit=units.intensity, path=data_folder / "meteo.nc"
+            unit=units.default_intensity_units, path=data_folder / "meteo.nc"
         )
         forcings["WIND"] = [wind_forcing]
         forcings["RAINFALL"] = [rain_forcing]
     if (data_folder / "wind.nc").exists():
-        wind_forcing = wind.WindNetCDF(unit=units.velocity, path="wind.nc")
+        wind_forcing = wind.WindNetCDF(
+            unit=units.default_velocity_units, path="wind.nc"
+        )
         forcings["WIND"] = [wind_forcing]
     if (data_folder / "rainfall.nc").exists():
-        rain_forcing = rainfall.RainfallNetCDF(unit=units.intensity, path="rainfall.nc")
+        rain_forcing = rainfall.RainfallNetCDF(
+            unit=units.default_intensity_units, path="rainfall.nc"
+        )
 
     event_dict = {
         "name": event_name,
@@ -377,15 +342,10 @@ def create_event_config(database: IDatabase, scenario_config: dict) -> IEvent:
         "forcings": forcings,
     }
 
-    # if "waterlevel" in scenario_config["event"]["sfincs_forcing"]:
-    #     waterlevel_key = scenario_config["event"]["sfincs_forcing"]["waterlevel"]
-    #     ds = dc.get_geodataset(waterlevel_key, time_tuple=(start_time, end_time))
-    #     ds.to_netcdf(event_folder / "waterlevel.nc")
-
-    return events.create_event(attrs=event_dict)
+    return database.create_event(attrs=event_dict)
 
 
-def create_projection(database: IDatabase, scenario_config: dict) -> IProjection:
+def create_projection(database: FloodAdapt, scenario_config: dict):
     """Check if projection already exists.
 
     If not, create it and save config file. If yes, return Projection object of pre-existing projection config
@@ -403,18 +363,18 @@ def create_projection(database: IDatabase, scenario_config: dict) -> IProjection
         FloodAdapt Projection object
     """
     # Load existing projections
-    projections_existing = projections.get_projections()
+    projections_existing = database.get_projections()
 
     # If necessary create new projection, save it and return object, otherwise load existing and return object
     if scenario_config["projection"]["name"] not in projections_existing["name"]:
         projection_new = create_projection_config(database, scenario_config)
-        projections.save_projection(projection_new)
+        database.save_projection(projection_new)
         return projection_new
     else:
-        return projections.get_projection(scenario_config["projection"]["name"])
+        return database.get_projection(scenario_config["projection"]["name"])
 
 
-def create_projection_config(database: IDatabase, scenario_config: dict) -> IProjection:
+def create_projection_config(database: FloodAdapt, scenario_config: dict):
     """Create FloodAdapt Projection object from scenario configuration.
 
     Parameters
@@ -475,10 +435,10 @@ def create_projection_config(database: IDatabase, scenario_config: dict) -> IPro
             )
     projection_dict.update({"socio_economic_change": sec_dict})
 
-    return projections.create_projection(attrs=projection_dict)
+    return database.create_projection(attrs=projection_dict)
 
 
-def create_strategy(database: IDatabase, scenario_config: dict) -> IStrategy:
+def create_strategy(database: FloodAdapt, scenario_config: dict):
     """Check if strategy already exists.
 
     If not, create it and save config file. If yes, return Strategy object of pre-existing strategy config
@@ -496,18 +456,18 @@ def create_strategy(database: IDatabase, scenario_config: dict) -> IStrategy:
         FloodAdapt Strategy object
     """
     # Load existing strategies
-    strategies_existing = strategies.get_strategies()
+    strategies_existing = database.get_strategies()
 
     # If necessary create new strategy, save it and return object, otherwise load existing and return object
     if scenario_config["strategy"]["name"] not in strategies_existing["name"]:
         strategy_new = create_strategy_config(database, scenario_config)
-        strategies.save_strategy(strategy_new)
+        database.save_strategy(strategy_new)
         return strategy_new
     else:
-        return strategies.get_strategy(scenario_config["strategy"]["name"])
+        return database.get_strategy(scenario_config["strategy"]["name"])
 
 
-def create_strategy_config(database: IDatabase, scenario_config: dict) -> IStrategy:
+def create_strategy_config(database: FloodAdapt, scenario_config: dict):
     """Create FloodAdapt Strategy object from scenario configuration.
 
     Where necessary create new measures, otherwise use existing ones.
@@ -531,7 +491,7 @@ def create_strategy_config(database: IDatabase, scenario_config: dict) -> IStrat
     }
     measure_list = []
     # measures_existing = measures.get_measures(database)
-    measures_existing = measures.get_measures()
+    measures_existing = database.get_measures()
     for measure in scenario_config["strategy"]:
         if "measure" not in measure:
             continue
@@ -560,10 +520,10 @@ def create_strategy_config(database: IDatabase, scenario_config: dict) -> IStrat
 
             measure_dict.update({"selection_type": selection_type})
             measure_dict.update(scenario_config["strategy"][measure]["misc"])
-            measure_new = measures.create_measure(
+            measure_new = database.create_measure(
                 attrs=measure_dict, type=scenario_config["strategy"][measure]["type"]
             )
-            measures.save_measure(measure_new)
+            database.save_measure(measure_new)
 
     scenario_dict.update({"measures": measure_list})
-    return strategies.create_strategy(attrs=scenario_dict)
+    return database.create_strategy(attrs=scenario_dict)

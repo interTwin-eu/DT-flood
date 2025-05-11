@@ -5,7 +5,6 @@ from pathlib import Path
 from shutil import copytree
 
 from flood_adapt.adapter.fiat_adapter import FiatAdapter
-from flood_adapt.api import scenarios
 
 from DT_flood.utils.fa_scenario_utils import init_scenario
 
@@ -24,16 +23,19 @@ fiatdir = Path(args.fiatdir)
 
 # Fetch FA database, misc
 database, scenario_config = init_scenario(database_root, scenario_name)
+database = database.database
 
-scenario = scenarios.get_scenario(scenario_config["name"])
+scenario = database.scenarios.get(scenario_config["name"])
 
-fiat_out_root = scenario.impacts.impacts_path / "fiat_model"
+fiat_out_root = database.output_path.joinpath(
+    "scenarios", scenario.name, "Impacts", "fiat_model"
+)
 print(f"Copying FIAT model from {fiatdir} to {fiat_out_root}")
 copytree(fiatdir, fiat_out_root)
 
 fiat_adpt = FiatAdapter(
     model_root=fiat_out_root,
-    config=database.site.attrs.fiat.config,
+    config=database.site.fiat.config,
     config_base_path=database.static_path,
 )
 print(f"Adapter model root: {fiat_adpt._model.root}")
