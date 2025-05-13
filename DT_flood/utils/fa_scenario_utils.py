@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from typing import Union
 
+import geojson
 import geopandas as gpd
 import hydromt  # noqa: F401
 import pandas as pd
@@ -477,6 +478,191 @@ def create_projection_config(
     projection_dict.update({"socio_economic_change": sec_dict})
 
     return database.create_projection(attrs=projection_dict)
+
+
+def create_measure(
+    database: FloodAdapt,
+    name: str,
+    measure_type: str,
+    selection: list[dict],
+    value: Union[float, list[float]],
+    property_type: str = None,
+):
+    """Create FloodAdapt Measure object from description.
+
+    If the measure already exists, return existing object.
+    Otherwise create new measure.
+
+    Parameters
+    ----------
+    database : FloodAdapt
+        FloodAdapt object
+    name : str
+        measure name
+    measure_type : str
+        measure type
+    selection : list[dict]
+        measure area selection
+    value : Union[float, list[float]]
+        measure parameter values
+    property_type : str, optional
+        affected type of property when relevant, by default None
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
+    measures_existing = database.get_measures()
+
+    if name not in measures_existing["name"]:
+        # unpack selected geom singleton list
+        # catch empty list (=no selection made)
+        try:
+            [geom] = selection
+        except ValueError:
+            geom = None
+        measure_new = create_measure_config(
+            database=database,
+            name=name,
+            measure_type=measure_type,
+            value=value,
+            property_type=property_type,
+            geom=geom,
+        )
+        database.save_measure(measure_new)
+        return measure_new
+    else:
+        return database.get_measure(name)
+
+
+def create_measure_config(
+    database: FloodAdapt,
+    name: str,
+    measure_type: str,
+    geom: dict,
+    value: Union[float, list[float]],
+    property_type: str = None,
+):
+    """Create new FloodAdapt measure object from description.
+
+    Parameters
+    ----------
+    database : FloodAdapt
+        FloodAdapt object
+    name : str
+        measure name
+    measure_type : str
+        measure type
+    geom : dict
+        measure area selection
+    value : Union[float, list[float]]
+        measure parameter values
+    property_type : str, optional
+        affected type of property when relevant, by default None
+
+    Returns
+    -------
+    _type_
+        _description_
+
+    Raises
+    ------
+    ValueError
+        _description_
+    ValueError
+        _description_
+    ValueError
+        _description_
+    ValueError
+        _description_
+    ValueError
+        _description_
+    ValueError
+        _description_
+    """
+    aggregation_area_type = None
+    aggregation_area_name = None
+    if geom is None:
+        selection_type = "all"
+        # aggregation_area_type = "all"
+    elif "agg_type" in geom:
+        selection_type = "aggregation_area"
+        aggregation_area_type = geom["agg_type"]
+        aggregation_area_name = geom["area_name"]
+    elif geom["type"] == "LineString":
+        selection_type = "polyline"
+    else:
+        selection_type = "polygon"
+
+    if measure_type in [
+        "floodwall",
+        "thin_dam",
+        "levee",
+        "elevate_properties",
+        "floodproof_properties",
+    ]:
+        if not isinstance(value, float):
+            raise ValueError(f"Invalid value {value} for measure type {measure_type}")
+        value_dict = {
+            "elevation": {
+                "value": value,
+                "units": database.database.site.gui.units.default_length_units,
+            }
+        }
+        if measure_type in ["floodproof_properties", "elevate_properties"]:
+            if property_type not in ["residential", "commercial"]:
+                raise ValueError(
+                    f"Invalid property type {property_type} for measure type {measure_type}"
+                )
+            value_dict["property_type"] = property_type
+    elif measure_type in ["pump", "culvert"]:
+        if not isinstance(value, float):
+            raise ValueError(f"Invalid value {value} for measure type {measure_type}")
+        value_dict = {
+            "discharge": {
+                "value": value,
+                "units": database.database.site.gui.units.default_discharge_units,
+            }
+        }
+    elif measure_type in ["water_square", "total_storage", "greening"]:
+        if not isinstance(value, list) and len(value) != 3:
+            raise ValueError(f"Invalid value {value} for measure type {measure_type}")
+        value_dict = {
+            "volume": {
+                "value": value[0],
+                "units": database.database.site.gui.units.default_volume_units,
+            },
+            "height": {
+                "value": value[1],
+                "units": database.database.site.gui.units.default_length_units,
+            },
+            "percent_area": value[2],
+        }
+    elif measure_type in ["buyout_properties"]:
+        if property_type not in ["residential", "commercial"]:
+            raise ValueError(
+                f"Invalid property type {property_type} for measure type {measure_type}"
+            )
+        value_dict = {"property_type": property_type}
+    else:
+        raise ValueError(f"Measure type {measure_type} not valid.")
+
+    measure_dict = {"name": name, "selection_type": selection_type, **value_dict}
+    if selection_type in ["polyline", "polygon"]:
+        filepath = (
+            database.database.input_path / "measures" / name / "selection.geojson"
+        )
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        with open(filepath, "w") as f:
+            geojson.dump(geom, f)
+        measure_dict["polygon_file"] = filepath.as_posix()
+    if aggregation_area_type:
+        measure_dict["aggregation_area_type"] = aggregation_area_type
+    if aggregation_area_name:
+        measure_dict["aggregation_area_name"] = aggregation_area_name
+
+    return database.create_measure(type=measure_type, attrs=measure_dict)
 
 
 def create_strategy(database: FloodAdapt, scenario_config: dict):
