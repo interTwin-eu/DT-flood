@@ -8,7 +8,6 @@ import geojson
 import geopandas as gpd
 import hydromt  # noqa: F401
 import pandas as pd
-import tomli
 from flood_adapt.config.config import Settings
 from flood_adapt.dbs_classes.interface.database import IDatabase
 from flood_adapt.flood_adapt import FloodAdapt
@@ -107,35 +106,15 @@ def init_scenario(
     if isinstance(database_path, str):
         database_path = Path(database_path)
 
-    scenario_path = (
-        database_path
-        / "input"
-        / "scenarios"
-        / scenario_name
-        / (scenario_name + "_toplevel.toml")
-    )
-
     db = get_database(database_path=database_path)
-
-    with open(scenario_path, "rb") as f:
-        scenario = tomli.load(f)
+    scenario = db.get_scenario(scenario_name)
 
     return db, scenario
 
 
-def create_scenario_config(database: FloodAdapt, scenario_config: dict):
-    """Create FloodAdapt Scenario object from scenario configuration."""
-    scenario_dict = {
-        "name": scenario_config["name"],
-        "description": f"Scenario generated from toplevel {scenario_config['name']} config file",
-        "event": scenario_config["event"]["name"],
-        "projection": scenario_config["projection"]["name"],
-        "strategy": scenario_config["strategy"]["name"],
-    }
-    return database.create_scenario(attrs=scenario_dict)
-
-
-def create_scenario(database: FloodAdapt, scenario_config: dict):
+def create_scenario(
+    database: FloodAdapt, name: str, event: str, strategy: str, projection: str
+):
     """Check if scenario already exists.
 
     If not, create it and save config file. If yes, return Scenario object of pre-existing event config.
@@ -152,21 +131,42 @@ def create_scenario(database: FloodAdapt, scenario_config: dict):
     IScenario
         FloodAdapt Scenario object
     """
-    # Create Event, Projection, Strategy used in scenario
-    _ = create_event(database=database, scenario_config=scenario_config)
-    _ = create_projection(database=database, scenario_config=scenario_config)
-    _ = create_strategy(database=database, scenario_config=scenario_config)
+    if event not in database.get_events()["name"]:
+        raise ValueError(f"Event {event} does not exist in the database!")
+    if strategy not in database.get_strategies()["name"]:
+        raise ValueError(f"Strategy {strategy} does not exist in the database!")
+    if projection not in database.get_projections()["name"]:
+        raise ValueError(f"Projection {projection} does not exist in the database!")
 
     # Load existing scenarios
     scenarios_existing = database.get_scenarios()
 
     # If necessary create new scenario, save it and return object, otherwise load existing and return object
-    if scenario_config["name"] not in scenarios_existing["name"]:
-        scenario_new = create_scenario_config(database, scenario_config)
+    if name not in scenarios_existing["name"]:
+        scenario_new = create_scenario_config(
+            database=database,
+            name=name,
+            event=event,
+            strategy=strategy,
+            projection=projection,
+        )
         database.save_scenario(scenario_new)
         return scenario_new
     else:
-        return database.get_scenario(scenario_config["name"])
+        return database.get_scenario(name)
+
+
+def create_scenario_config(
+    database: FloodAdapt, name: str, event: str, strategy: str, projection: str
+):
+    """Create FloodAdapt Scenario object from scenario configuration."""
+    scenario_dict = {
+        "name": name,
+        "event": event,
+        "projection": projection,
+        "strategy": strategy,
+    }
+    return database.create_scenario(attrs=scenario_dict)
 
 
 def create_event(
@@ -665,7 +665,7 @@ def create_measure_config(
     return database.create_measure(type=measure_type, attrs=measure_dict)
 
 
-def create_strategy(database: FloodAdapt, scenario_config: dict):
+def create_strategy(database: FloodAdapt, name: str, measure_list: list):
     """Check if strategy already exists.
 
     If not, create it and save config file. If yes, return Strategy object of pre-existing strategy config
@@ -686,15 +686,17 @@ def create_strategy(database: FloodAdapt, scenario_config: dict):
     strategies_existing = database.get_strategies()
 
     # If necessary create new strategy, save it and return object, otherwise load existing and return object
-    if scenario_config["strategy"]["name"] not in strategies_existing["name"]:
-        strategy_new = create_strategy_config(database, scenario_config)
+    if name not in strategies_existing["name"]:
+        strategy_new = create_strategy_config(
+            database=database, name=name, measure_list=measure_list
+        )
         database.save_strategy(strategy_new)
         return strategy_new
     else:
-        return database.get_strategy(scenario_config["strategy"]["name"])
+        return database.get_strategy(name)
 
 
-def create_strategy_config(database: FloodAdapt, scenario_config: dict):
+def create_strategy_config(database: FloodAdapt, name: str, measure_list: list):
     """Create FloodAdapt Strategy object from scenario configuration.
 
     Where necessary create new measures, otherwise use existing ones.
@@ -712,45 +714,6 @@ def create_strategy_config(database: FloodAdapt, scenario_config: dict):
         FloodAdapt Strategy object
     """
     # General scenario config
-    scenario_dict = {
-        "name": scenario_config["strategy"]["name"],
-        "description": f"Strategy generated from toplevel {scenario_config['name']} config file",
-    }
-    measure_list = []
-    # measures_existing = measures.get_measures(database)
-    measures_existing = database.get_measures()
-    for measure in scenario_config["strategy"]:
-        if "measure" not in measure:
-            continue
+    scenario_dict = {"name": name, "measures": measure_list}
 
-        measure_list.append(scenario_config["strategy"][measure]["name"])
-        if (
-            scenario_config["strategy"][measure]["name"]
-            not in measures_existing["name"]
-        ):
-            measure_dict = {}
-            measure_dict.update(
-                {
-                    "name": scenario_config["strategy"][measure]["name"],
-                    "type": scenario_config["strategy"][measure]["type"],
-                }
-            )
-
-            if Path(scenario_config["strategy"][measure]["selection"]).exists():
-                selection_type = "polygon"
-                polygon_file = scenario_config["strategy"][measure]["selection"]
-                measure_dict.update({"polygon_file": polygon_file})
-            elif scenario_config["strategy"][measure]["selection"] == "all":
-                selection_type = "all"
-            else:
-                selection_type = "aggregation_area"
-
-            measure_dict.update({"selection_type": selection_type})
-            measure_dict.update(scenario_config["strategy"][measure]["misc"])
-            measure_new = database.create_measure(
-                attrs=measure_dict, type=scenario_config["strategy"][measure]["type"]
-            )
-            database.save_measure(measure_new)
-
-    scenario_dict.update({"measures": measure_list})
     return database.create_strategy(attrs=scenario_dict)

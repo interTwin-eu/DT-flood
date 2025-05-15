@@ -22,10 +22,8 @@ database_root = Path(args.input).parent
 fiatdir = Path(args.fiatdir)
 
 # Fetch FA database, misc
-database, scenario_config = init_scenario(database_root, scenario_name)
+database, scenario = init_scenario(database_root, scenario_name)
 database = database.database
-
-scenario = database.scenarios.get(scenario_config["name"])
 
 fiat_out_root = database.output_path.joinpath(
     "scenarios", scenario.name, "Impacts", "fiat_model"

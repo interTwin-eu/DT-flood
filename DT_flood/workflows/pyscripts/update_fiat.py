@@ -22,9 +22,8 @@ floodmap_fn = Path(args.floodmap)
 waterlevel_fn = Path(args.waterlevelmap)
 
 # Fetch FA database, misc
-database, scenario_config = init_scenario(database_root, scenario_name)
+database, scenario = init_scenario(database_root, scenario_name)
 database = database.database
-scenario = database.scenarios.get(scenario_config["name"])
 map_type = database.site.fiat.config.floodmap_type
 
 print("Fetching FIAT model")

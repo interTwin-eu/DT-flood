@@ -23,14 +23,13 @@ scenario_name = args.scenario
 database_root = Path(args.input).parent
 
 # unpack FA database, scenario, event description
-database, scenario_config = init_scenario(database_root, scenario_name)
+database, scenario = init_scenario(database_root, scenario_name)
 database = database.database
-scenario = database.scenarios.get(scenario_config["name"])
 
 results_path = database.scenarios.output_path.joinpath(scenario.name)
 
 
-event = scenario_config["event"]
+event = database.events.get(scenario.event)
 event_dir = database.input_path / "events" / scenario.event
 
 # wflow template model
@@ -44,7 +43,7 @@ wf = WflowModel(
 wf.read()
 
 print("Updating WFlow model for warmup run")
-endtime = datetime.strptime(event["start_time"], "%Y-%m-%d %H:%M:%S")
+endtime = event.time.start_time
 starttime = endtime - timedelta(days=365)
 
 opt = {

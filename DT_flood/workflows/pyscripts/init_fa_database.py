@@ -7,7 +7,7 @@ from shutil import rmtree
 
 from flood_adapt.misc.utils import write_finished_file
 
-from DT_flood.utils.fa_scenario_utils import create_scenario, init_scenario
+from DT_flood.utils.fa_scenario_utils import init_scenario
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input")
@@ -21,8 +21,7 @@ database_root = Path(args.input).parent
 
 database, scenario = init_scenario(database_root, scenario)
 
-new_scenario = create_scenario(database, scenario)
-results_path = database.database.scenarios.output_path.joinpath(new_scenario.name)
+results_path = database.database.scenarios.output_path.joinpath(scenario.name)
 
 if results_path.exists():
     print("Removing existing output folder")
