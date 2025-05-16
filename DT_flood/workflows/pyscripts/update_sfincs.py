@@ -56,7 +56,6 @@ for measure in strategy.get_hazard_measures():
     sf_adpt.add_measure(measure)
 
 sf_adpt.add_projection(projection)
-print(sf_adpt._model.geoms)
 sf_adpt.write(path_out=sfincs_path)
 
 sf = SfincsModel(root=sfincs_path, mode="r", logger=logger)
