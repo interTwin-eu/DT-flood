@@ -56,7 +56,7 @@ class GFM(Method):
         Run the GFM method.
         """
 
-        _ = Client(processes=False, threads_per_worker=2, n_workers=1, memory_limit="4GB")
+        client = Client(processes=False, threads_per_worker=2, n_workers=1, memory_limit="4GB")
 
         start = self.params.starttime.strftime("%Y-%m-%d")
         end = self.params.endtime.strftime("%Y-%m-%d")
@@ -68,3 +68,5 @@ class GFM(Method):
         fd = flood.decision(bbox=bbox, datetime=time_range).compute()
 
         fd.to_netcdf(self.output.floodcube)
+
+        client.close()

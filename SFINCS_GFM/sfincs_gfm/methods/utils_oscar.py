@@ -5,14 +5,14 @@ import uuid
 import tarfile
 
 from minio import Minio
-from oscar_python import Client
+from oscar_python.client import Client
 
 def generate_token(refresh_token):
     data = {
         "grant_type": "refresh_token",
         "refresh_token": refresh_token,
-        "client_id": "token_portal",
-         "scope": "openid email profile voperson_id voperson_external_affiliation entitlements eduperson_entitlement"
+        "client_id": "token-portal",
+        "scope": "openid email profile voperson_id voperson_external_affiliation entitlements eduperson_entitlement"
     }
     response = requests.post(
         "https://aai-demo.egi.eu/auth/realms/egi/protocol/openid-connect/token",
@@ -43,10 +43,11 @@ def check_oscar_connection(endpoint, token):
 def check_service(client, service_path):
     # TODO: make sure service vs service+service_dir is correct. Only want to use single input for both service name and service dir
     service = service_path.stem
-    service_directory = service_path.parent
+    service_directory = service_path.parent.as_posix()
     try:
         service_info = client.get_service(service)
-        minio_info = json.loads(service_info.text)["storage_providers"]["minio"]["default"]
+        # minio_info = json.loads(service_info.text)["storage_providers"]["minio"]["default"]
+        minio_info = json.loads(client.get_cluster_config().text)["minio_provider"]
         input_info = json.loads(service_info.text)["input"][0]
         output_info = json.loads(service_info.text)["output"][0]
 
@@ -74,7 +75,8 @@ def check_service(client, service_path):
             print(err)
         os.remove(oscar_service_directory+"_tmp.yaml")
         service_info = client.get_service(service)
-        minio_info = json.loads(service_info.text)["storage_providers"]["minio"]["default"]
+        # minio_info = json.loads(service_info.text)["storage_providers"]["minio"]["default"]
+        minio_info = json.loads(client.get_cluster_config().text)["minio_provider"]
         input_info = json.loads(service_info.text)["input"][0]
         output_info = json.loads(service_info.text)["output"][0]
         print(f"OSCAR Service {service} created")
@@ -91,6 +93,9 @@ def connect_minio(minio_info):
 def upload_file_minio(client, input_info, input_file):
     print("Uploading file to bucket")
     random = uuid.uuid4().hex + "_" + input_file.split("/")[-1]
+    print(input_file)
+    print(random)
+    print("/".join(input_info["path"].split("/")[1:])+"/"+random)
     result = client.fput_object(
         input_info["path"].split("/")[0],
         "/".join(input_info["path"].split("/")[1:])+"/"+random,

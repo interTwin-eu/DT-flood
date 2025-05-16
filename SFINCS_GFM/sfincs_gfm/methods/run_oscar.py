@@ -27,7 +27,7 @@ class Params(Parameters):
 
     service: Path
     refreshtoken: str
-    endpoint: str = ""
+    endpoint: str = "https://oscar-ukri.intertwin.fedcloud.eu"
     output_loc: OutputDirPath = "output"
 
 class RunOscarService(Method):
@@ -50,14 +50,14 @@ class RunOscarService(Method):
             input_file=input_file
         )
 
-        output_file = self.params.output_loc / self.input.input_file.name
+        output_file = Path(self.params.output_loc) / self.input.input_file.name
         self.output: Output = Output(
             output_file=output_file
         )
 
     def _run(self):
 
-        input_dir = self.input.input_file.parent
+        input_dir = self.input.input_file.parent.as_posix()
         output_loc = self.params.output_loc
         endpoint = self.params.endpoint
         refreshtoken = self.params.refreshtoken
