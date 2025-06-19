@@ -4,7 +4,7 @@ functions:
       name: sfincs
       cpu: '2.0'
       memory: 3Gi
-      image: deltares/sfincs-cpu:sfincs-v2.1.1-Dollerup-Release
+      image: deltares/sfincs-cpu:sfincs-v2.2.0-col-dEze-Release
       script: sfincs_script.sh
       log_level: DEBUG   # To avoid supervisor logs in response
       vo: dev.intertwin.eu
