@@ -1,16 +1,11 @@
 """Plot utility functions."""
 
-import cartopy.crs as ccrs
-import cartopy.io.img_tiles as cimgt
-import geopandas as gdp
-import geopandas as gpd
-import matplotlib.patches as mpatches
-import matplotlib.pyplot as plt
-import numpy as np
-from ipyleaflet import GeoData, GeomanDrawControl, LayersControl, LegendControl, Map
+
+import leafmap.leafmap as leafmap
+from ipyleaflet import GeoData, GeomanDrawControl, LayersControl, LegendControl
 from ipywidgets import Layout
-from matplotlib import colors
-from matplotlib.cm import get_cmap
+
+from DT_flood.utils.plotting.sfincs import get_model_bounds
 
 
 def _handle_draw(target, action, geo_json, geometry):
@@ -37,9 +32,16 @@ def _handle_click(geometry, agg_area_name, **kwargs):
     return geometry
 
 
-def list_agg_areas(database):
-    """Return list of available aggregation area types."""
-    return list(database.get_aggregation_areas().keys())
+def create_base_map(database):
+    """Create base map layer in database region."""
+    [center] = database.get_model_boundary().dissolve().centroid.to_crs(4326)
+    center = [center.y, center.x]
+
+    layout = Layout(height="600px")
+
+    m = leafmap.Map(center=center, zoom=10, scroll_wheel_zoom=True, layout=layout)
+
+    return m
 
 
 def draw_database_map(database, agg_area_name=None, **kwargs):
@@ -55,19 +57,13 @@ def draw_database_map(database, agg_area_name=None, **kwargs):
     def handle_click(**kwargs):
         _handle_click(geometry=selected_geometry, agg_area_name=agg_area_name, **kwargs)
 
-    [center] = database.get_model_boundary().dissolve().centroid.to_crs(4326)
-    center = [center.y, center.x]
-
     if agg_area_name is not None:
         agg_area = database.get_aggregation_areas()[agg_area_name]
 
-    layout = Layout(height="600px")
+    m = create_base_map(database=database)
 
-    m = Map(center=center, zoom=10, scroll_wheel_zoom=True, layout=layout, **kwargs)
-
-    model_bounds = database.get_model_boundary().dissolve().to_crs(4326)
     geodata = GeoData(
-        geo_dataframe=model_bounds,
+        geo_dataframe=get_model_bounds(database),
         style={"color": "black", "fillOpacity": 0, "dashArray": "8"},
         name="SFINCS model boundary",
     )
@@ -97,181 +93,3 @@ def draw_database_map(database, agg_area_name=None, **kwargs):
     m.add(legend)
 
     return m, selected_geometry
-
-
-def plot_wflow_model(wflow_model):
-    """Plot WFlow basemap.
-
-    Parameters
-    ----------
-    wflow_model : hydromt_wflow.WFlowModel
-        Wflow model instance from hydromt_wflow
-    """
-    if "wflow_dem" not in wflow_model.staticmaps:
-        wflow_model.read_staticmaps("staticmaps.nc")
-
-    proj = ccrs.PlateCarree()
-    gdf_bas = wflow_model.basins
-    gdf_riv = wflow_model.rivers
-    dem = wflow_model.staticmaps["wflow_dem"].raster.mask_nodata()
-
-    vmin, vmax = dem.quantile([0.0, 0.98]).compute()
-    c_dem = plt.cm.terrain(np.linspace(0.25, 1, 256))
-    cmap = colors.LinearSegmentedColormap.from_list("dem", c_dem)
-    norm = colors.Normalize(vmin=vmin, vmax=vmax)
-    kwargs = dict(cmap=cmap, norm=norm)
-    cbar_kwargs = dict(shrink=0.8, label="Elevation [m]")
-
-    fig = plt.figure(figsize=(14, 7))
-    ax = fig.add_subplot(projection=proj)
-    ax.add_image(cimgt.QuadtreeTiles(), 10, alpha=0.5)
-    gdf_bas.boundary.plot(ax=ax, color="k", linewidth=1)
-    gdf_riv.plot(ax=ax, color="b", linewidth=gdf_riv["strord"] / 2, label="rivers")
-    dem.plot(ax=ax, **kwargs, cbar_kwargs=cbar_kwargs)
-
-    if "reservoirs" in wflow_model.geoms:
-        resv_kwargs = dict(
-            facecolor="blue", edgecolor="black", linewidth=1, label="reservoirs"
-        )
-        wflow_model.staticgeoms["reservoirs"].plot(ax=ax, **resv_kwargs)
-    if "Q_gauges" in wflow_model.results:
-        gauges_kwargs = dict(
-            facecolor="red",
-            marker="d",
-            markersize=30,
-            zorder=10,
-            edgecolor="w",
-            label="gauges",
-        )
-        gdf_gauges = gdp.GeoDataFrame(
-            {"geometry": wflow_model.results["Q_gauges"].geometry}
-        )
-        gdf_gauges.plot(ax=ax, **gauges_kwargs)
-    # wflow_model.staticgeoms['gauges_src'].plot(ax=ax, **gauges_kwargs)
-
-    _ = ax.legend(
-        # handles=[*ax.get_legend_handles_labels()[0], *patches],
-        title="Legend",
-        loc="lower right",
-        frameon=True,
-        framealpha=0.7,
-        edgecolor="k",
-        facecolor="white",
-    )
-    ax.xaxis.set_visible(True)
-    ax.yaxis.set_visible(True)
-    ax.set_xlabel("Longitude [deg]")
-    ax.set_ylabel("Latitude [deg]")
-    ax.set_title("WFlow base map")
-
-
-def plot_fiat_model(fiat):
-    """Plot FIAT basemap.
-
-    Parameters
-    ----------
-    fiat : hydromt_fiat.FiatModel
-        FIAT model instance from hydromt_fiat
-    """
-    proj = ccrs.PlateCarree()
-    gdf_fiat = fiat.exposure.get_full_gdf(fiat.exposure.exposure_db)
-    by_type = []
-    for type in gdf_fiat["Primary Object Type"].unique():
-        by_type.append(gdf_fiat[gdf_fiat["Primary Object Type"] == type])
-
-    fig = plt.figure(figsize=(14, 10))
-    ax = fig.add_subplot(projection=proj)
-    ax.add_image(cimgt.OSM(), 10, interpolation="bilinear", alpha=0.3)
-
-    cmaps = {"residential": "Reds", "industrial": "Blues", "commercial": "Greens"}
-
-    handles = []
-    patches = []
-    for gdf in by_type:
-        class_name = gdf["Primary Object Type"].unique()[0]
-        # cmap = get_cmap(cmaps[class_name])
-        color = get_cmap(cmaps[class_name])(0.2)
-        kwargs = dict(facecolor=color, edgecolor="k", linewidth=1, label=class_name)
-        patches.append(mpatches.Patch(**kwargs))
-        handles.append(
-            gdf.plot(
-                ax=ax,
-                column="Max Potential Damage: Total",
-                scheme="quantiles",
-                cmap=get_cmap(cmaps[class_name]),
-            )
-        )
-
-    ax.legend(
-        handles=[*handles, *patches],
-        title="Legend",
-        loc="lower right",
-        frameon=True,
-        framealpha=0.7,
-        edgecolor="k",
-        facecolor="white",
-    )
-    ax.set_title("Delft-FIAT basemap")
-    ax.xaxis.set_visible(True)
-    ax.yaxis.set_visible(True)
-    ax.set_ylabel("Latitude [deg]")
-    ax.set_xlabel("Longitude [deg]")
-
-
-def plot_sfincs_model(sf):
-    """Plot SFINCS basemap.
-
-    Parameters
-    ----------
-    sf : hydromt_sfincs.SfincsModel
-        SFINCS model instance from hydromt
-    """
-    proj = ccrs.PlateCarree()
-    bzs_points = gpd.GeoDataFrame(
-        {"index": sf.forcing["bzs"].index, "geometry": sf.forcing["bzs"].geometry},
-        crs=sf.crs,
-    ).to_crs("EPSG:4326")
-    # dis_points = gpd.GeoDataFrame({"index": sf.forcing['dis'].index, "geometry": sf.forcing['dis'].geometry}, crs=sf.crs).to_crs("EPSG:4326")
-
-    vmin, vmax = sf.grid["dep"].raster.mask_nodata().quantile([0, 0.98]).values
-    c_dem = plt.cm.terrain(np.linspace(0.25, 1, int(vmax)))
-    c_bat = plt.cm.terrain(np.linspace(0, 0.17, abs(int(vmin))))
-    c_dem = np.vstack((c_bat, c_dem))
-    cmap = colors.LinearSegmentedColormap.from_list("dem", c_dem)
-    norm = colors.Normalize(vmin=vmin, vmax=vmax)
-
-    fig = plt.figure(figsize=(14, 10))
-    ax = fig.add_subplot(projection=proj)
-    ax.add_image(cimgt.OSM(), 10, interpolation="bilinear", alpha=0.5)
-
-    sf.grid.rio.reproject("EPSG:4326")["dep"].plot(
-        ax=ax,
-        cmap=cmap,
-        norm=norm,
-        cbar_kwargs={"shrink": 0.85, "label": "DEM [m]", "pad": 0.03},
-    )
-    # sf.geoms['obs'].to_crs('EPSG:4326').plot(ax=ax, marker="d", facecolor='w', edgecolor='r', markersize=60, label="obs points", zorder=10)
-    # sf.geoms['rivers_inflow'].to_crs("EPSG:4326").plot(ax=ax, color='darkblue', label="Rivers")
-    bzs_points.plot(
-        ax=ax,
-        marker="^",
-        facecolor="w",
-        edgecolor="k",
-        markersize=60,
-        label="bzs points",
-        zorder=10,
-    )
-    # dis_points.plot(ax=ax, marker=">", facecolor='w', edgecolor='k', markersize=60, label="dis points", zorder=10)
-    ax.legend(
-        title="Legend",
-        loc="upper right",
-        frameon=True,
-        framealpha=0.7,
-        edgecolor="k",
-        facecolor="white",
-    )
-    ax.xaxis.set_visible(True)
-    ax.yaxis.set_visible(True)
-    ax.set_ylabel("Latitude [deg]")
-    ax.set_xlabel("Longitude [deg]")
-    ax.set_title("SFINCS basemap DEM")

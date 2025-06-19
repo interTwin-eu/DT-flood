@@ -12,6 +12,7 @@ dependencies:
   - numpy
   - numexpr
   - hydromt_wflow
+  - leafmap
   - mapclassify
   - python=3.11
   - ruff
