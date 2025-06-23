@@ -2,10 +2,23 @@
 
 
 import leafmap.leafmap as leafmap
-from ipyleaflet import GeoData, GeomanDrawControl, LayersControl, LegendControl
-from ipywidgets import Layout
+from ipyleaflet import (
+    GeoData,
+    GeomanDrawControl,
+    LayersControl,
+    LegendControl,
+    WidgetControl,
+)
+from ipywidgets import Button, Image, Layout
 
-from DT_flood.utils.plotting.sfincs import get_model_bounds
+from DT_flood.utils.plotting.map_utils import rm_layer_by_name
+from DT_flood.utils.plotting.sfincs import (
+    add_sfincs_bzs_points,
+    add_sfincs_dep_map,
+    add_sfincs_riv_map,
+    get_model_bounds,
+    get_sfincs_scenario_model,
+)
 
 
 def _handle_draw(target, action, geo_json, geometry):
@@ -93,3 +106,47 @@ def draw_database_map(database, agg_area_name=None, **kwargs):
     m.add(legend)
 
     return m, selected_geometry
+
+
+def draw_map_scenario(database, scenario):
+    """Plot the output maps for a scenario."""
+    map = create_base_map(database)
+
+    sf = get_sfincs_scenario_model(database, scenario)
+
+    map = add_sfincs_dep_map(map, sf)
+    map = add_sfincs_riv_map(map, sf)
+    map = add_sfincs_bzs_points(map, sf)
+
+    map = button_rm_plots(map)
+
+    del sf
+
+    return map
+
+
+def button_rm_plots(map):
+    """Add button to map to remove plot box."""
+
+    def _rm_plot(button, **kwargs):
+        controls = [
+            control for control in map.controls if isinstance(control, WidgetControl)
+        ]
+        for control in controls:
+            if isinstance(control.widget, Image):
+                map.remove(control)
+
+        names = [layer.name for layer in map.layers]
+        for name in names:
+            if "plot_" in name:
+                rm_layer_by_name(map, name)
+
+    button = Button(
+        description="Remove plot box",
+    )
+    button.on_click(_rm_plot)
+
+    control = WidgetControl(widget=button, position="bottomleft")
+    map.add(control)
+
+    return map
