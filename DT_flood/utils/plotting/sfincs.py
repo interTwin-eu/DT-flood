@@ -5,8 +5,9 @@ import cartopy.io.img_tiles as cimgt
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
+from branca.colormap import LinearColormap
 from hydromt_sfincs import SfincsModel
-from ipyleaflet import CircleMarker, GeoData
+from ipyleaflet import CircleMarker, ColormapControl, GeoData
 from matplotlib import colors
 
 from DT_flood.utils.plotting.map_utils import (
@@ -14,6 +15,19 @@ from DT_flood.utils.plotting.map_utils import (
     add_plot_box,
     rm_layer_by_name,
 )
+
+
+def add_plot_marker(map, location):
+    """Add marker to map for timeseries plots."""
+    circle = CircleMarker(name="plot_marker")
+    circle.location = location
+    circle.radius = 8
+    circle.color = "black"
+    circle.fill_color = "black"
+    circle.weight = 3
+    circle.dashArray = 1
+    circle.fillOpacity = 1
+    map.add(circle)
 
 
 def get_model_bounds(database):
@@ -38,14 +52,13 @@ def get_sfincs_scenario_model(database, scenario):
 
 def add_sfincs_dep_map(map, sf):
     """Add SFINCS dep to map layer."""
-    vmin, vmax = sf.grid["dep"].raster.mask_nodata().quantile([0.0, 0.98]).values
+    vmin, vmax = (
+        sf.grid["dep"].raster.mask_nodata().quantile([0.0, 0.98]).round(1).values
+    )
     c_dem = plt.cm.terrain(np.linspace(0.25, 1, int(vmax)))
     c_bat = plt.cm.terrain(np.linspace(0, 0.17, abs(int(vmin))))
     c_dem = np.vstack((c_bat, c_dem))
     cmap = colors.LinearSegmentedColormap.from_list("dem", c_dem)
-
-    # N = 9
-    # legend_vals = cmap(np.linspace(0,1,N))
 
     map.add_raster(
         sf.grid.rio.reproject("EPSG:4326")["dep"],
@@ -56,8 +69,16 @@ def add_sfincs_dep_map(map, sf):
         layer_name="sfincs_dep",
     )
 
-    # color_hex = [colors.rgb2hex(i) for i in legend_vals]
-    # map.add_colorbar(color_hex, round(vmin,2), round(vmax,2), caption="Topobathy [m]", step=N)
+    cmap = LinearColormap(colors=[tuple(c) for c in c_dem], vmin=vmin, vmax=vmax)
+    clrmap_control = ColormapControl(
+        colormap=cmap,
+        value_min=vmin,
+        value_max=vmax,
+        caption="Topobathy [m]",
+        position="bottomleft",
+        transparent_bg=True,
+    )
+    map.add(clrmap_control)
 
     return map
 
@@ -73,6 +94,56 @@ def add_sfincs_riv_map(map, sf):
     map.add_gdf(
         riv, info_mode=None, hover_style=style, style=style, layer_name="sfincs_riv"
     )
+
+    return map
+
+
+def add_sfincs_dis_points(map, sf):
+    """Add SFINCS dis points to map layer."""
+    dis_points = gpd.GeoDataFrame(
+        {"index": sf.forcing["dis"].index, "geometry": sf.forcing["dis"].geometry},
+        crs=sf.crs,
+    ).to_crs("EPSG:4326")
+
+    geo_data = GeoData(
+        geo_dataframe=dis_points,
+        style={
+            "color": "black",
+            "radius": 8,
+            "fillColor": "#e9980c",
+            "opacity": 0.5,
+            "weigth": 2,
+            "dashArray": 2,
+            "fillOpacity": 0.6,
+        },
+        hover_style={"fillColor": "black", "fillOpacity": 0.4},
+        point_style={
+            "radius": 5,
+            "color": "red",
+            "fillOpacity": 0.8,
+            "fillColor": "#e9980c",
+            "weight": 3,
+        },
+        name="sfincs_dis",
+    )
+
+    map.add(geo_data)
+
+    def update_plot_box(feature, **kwargs):
+        index = feature["properties"]["index"]
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        sf.forcing["dis"].sel(index=index).plot(ax=ax)
+        ax.set_ylabel("River discharge [m^3/s]")
+        ax.set_title(f"Discharge boundary point {index}")
+        plt.grid()
+
+        rm_layer_by_name(map, "plot_marker")
+        im_wdg = add_plot_box(map)
+        add_fig_to_widg(im_wdg, fig=fig)
+        add_plot_marker(map, location=feature["geometry"]["coordinates"][::-1])
+
+    geo_data.on_click(update_plot_box)
 
     return map
 
@@ -95,7 +166,7 @@ def add_sfincs_bzs_points(map, sf):
             "dashArray": "2",
             "fillOpacity": 0.6,
         },
-        hover_style={"fillColor": "red", "fillOpacity": 0.2},
+        hover_style={"fillColor": "black", "fillOpacity": 0.4},
         point_style={
             "radius": 5,
             "color": "red",
@@ -107,17 +178,6 @@ def add_sfincs_bzs_points(map, sf):
     )
 
     map.add(geo_data)
-
-    def add_plot_marker(map, location):
-        circle = CircleMarker(name="plot_marker")
-        circle.location = location
-        circle.radius = 8
-        circle.color = "black"
-        circle.fill_color = "red"
-        circle.weight = 3
-        circle.dashArray = 1
-        circle.fillOpacity = 1
-        map.add(circle)
 
     def update_plot_box(feature, **kwargs):
         index = feature["properties"]["index"]
