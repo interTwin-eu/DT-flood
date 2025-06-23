@@ -17,6 +17,7 @@ from DT_flood.utils.plotting.sfincs import (
     add_sfincs_bzs_points,
     add_sfincs_dep_map,
     add_sfincs_dis_points,
+    add_sfincs_legend,
     add_sfincs_riv_map,
     get_model_bounds,
     get_sfincs_scenario_model,
@@ -117,7 +118,8 @@ def draw_database_map(database, agg_area_name=None, **kwargs):
 def draw_map_scenario(database, scenario):
     """Plot the output maps for a scenario."""
     map = create_base_map(database)
-    map.add(LayersControl())
+    map.add(LayersControl(position="topleft"))
+    map = button_rm_plots(map)
 
     sf = get_sfincs_scenario_model(database, scenario)
 
@@ -126,7 +128,7 @@ def draw_map_scenario(database, scenario):
     map = add_sfincs_dis_points(map, sf)
     map = add_sfincs_bzs_points(map, sf)
 
-    map = button_rm_plots(map)
+    map = add_sfincs_legend(map)
 
     del sf
 
@@ -154,7 +156,7 @@ def button_rm_plots(map):
     )
     button.on_click(_rm_plot)
 
-    control = WidgetControl(widget=button, position="bottomleft")
+    control = WidgetControl(widget=button, position="topleft")
     map.add(control)
 
     return map

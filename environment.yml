@@ -9,11 +9,13 @@ dependencies:
   - delft_fiat
   - ipykernel
   - ipyleaflet
+  - ipycanvas
   - numpy
   - numexpr
   - hydromt_wflow
   - leafmap
   - mapclassify
+  - numpy<=2.2
   - python=3.11
   - ruff
   - pip
