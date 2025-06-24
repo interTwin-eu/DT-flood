@@ -1,7 +1,8 @@
 """Plot utility functions."""
-
-
 import leafmap.leafmap as leafmap
+import matplotlib as mpl
+import numpy as np
+import xarray as xr
 from ipyleaflet import (
     DrawControl,
     GeoData,
@@ -53,7 +54,7 @@ def create_base_map(database):
     [center] = database.get_model_boundary().dissolve().centroid.to_crs(4326)
     center = [center.y, center.x]
 
-    layout = Layout(height="600px")
+    layout = Layout(height="1200px")
 
     m = leafmap.Map(center=center, zoom=10, scroll_wheel_zoom=True, layout=layout)
 
@@ -115,22 +116,83 @@ def draw_database_map(database, agg_area_name=None, **kwargs):
     return m, selected_geometry
 
 
-def draw_map_scenario(database, scenario):
+def draw_scenario_sfincs(database, scenario, layer="dep"):
     """Plot the output maps for a scenario."""
+    if layer not in ["dep", "floodmap"]:
+        raise ValueError("Select valid SFINCS map data layer")
+
     map = create_base_map(database)
     map.add(LayersControl(position="topleft"))
     map = button_rm_plots(map)
 
     sf = get_sfincs_scenario_model(database, scenario)
 
-    map = add_sfincs_dep_map(map, sf)
     map = add_sfincs_riv_map(map, sf)
     map = add_sfincs_dis_points(map, sf)
     map = add_sfincs_bzs_points(map, sf)
 
     map = add_sfincs_legend(map)
 
+    if layer == "floodmap":
+        map = add_floodmap(map, database, scenario)
+    if layer == "dep":
+        map = add_sfincs_dep_map(map, sf)
+
     del sf
+
+    return map
+
+
+def add_floodmap(map, database, scenario):
+    """Add Floodmap layer to map."""
+    database = database.database
+    flood_fn = (
+        database.scenarios.output_path.joinpath(scenario)
+        / "Flooding"
+        / f"FloodMap_{scenario}.tif"
+    )
+    base_fn = database.static_path / "dem" / "dep_subgrid.tif"
+
+    flood = xr.open_dataarray(flood_fn)
+    base = xr.open_dataarray(base_fn)
+
+    base = base.sel(band=1)
+    flood = flood.sel(band=1)
+    base = base.interp_like(flood)
+    flood = flood.where(base >= 0, np.nan)
+
+    base.close()
+    del base
+
+    vmin = 0
+    vmax = 2
+    N = 5
+    bins = [*np.linspace(vmin, vmax, N), np.inf]
+
+    flood_grp = flood.groupby_bins(flood, bins)
+    flood_bin = flood_grp.map(lambda x: x - x + x.min(), shortcut=False)
+    flood_bin = flood_bin.sortby([flood_bin.x]).interp_like(flood, method="nearest")
+
+    flood.close()
+    del flood
+
+    cmap = mpl.colormaps["Blues"]
+    legend_keys = [f"<={i}" for i in bins[1:-1]]
+    legend_keys.append(f">{bins[-2]}")
+    legend_vals = cmap(np.linspace(0, 1, N))
+    lgnd = {legend_keys[i]: mpl.colors.rgb2hex(legend_vals[i]) for i in range(N)}
+
+    map.add_raster(
+        flood_bin,
+        vmin=vmin,
+        vmax=vmax,
+        nodata=np.nan,
+        colormap=cmap,
+        layer_name="Floodmap",
+    )
+    lgnd_control = LegendControl(lgnd, title="Flood Depth [m]", position="bottomleft")
+
+    map.add(lgnd_control)
 
     return map
 

@@ -6,14 +6,24 @@ from ipyleaflet import WidgetControl
 from ipywidgets import Image
 
 
+def get_layer_by_name(map, name):
+    """Get map layer by name."""
+    for layer in map.layers:
+        if layer.name == name:
+            return layer
+    return ValueError(f"Layer {name} not found in map")
+
+
 def rm_layer_by_name(map, name):
     """Remove layer from map by its name."""
     names = [layer.name for layer in map.layers]
     if name not in names:
         pass
-    for layer in map.layers:
-        if layer.name == name:
-            map.remove(layer)
+    # for layer in map.layers:
+    #     if layer.name == name:
+    #         map.remove(layer)
+    layer = get_layer_by_name(map, name)
+    map.remove(layer)
 
 
 def add_plot_box(map):
