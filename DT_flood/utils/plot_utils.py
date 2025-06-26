@@ -13,7 +13,8 @@ from ipyleaflet import (
 )
 from ipywidgets import Button, Image, Layout
 
-from DT_flood.utils.plotting.map_utils import rm_layer_by_name
+from DT_flood.utils.plotting.fiat import add_fiat_impact, list_agg_areas
+from DT_flood.utils.plotting.map_utils import get_layer_by_name, rm_layer_by_name
 from DT_flood.utils.plotting.sfincs import (
     add_sfincs_bzs_points,
     add_sfincs_dep_map,
@@ -117,7 +118,7 @@ def draw_database_map(database, agg_area_name=None, **kwargs):
 
 
 def draw_scenario_sfincs(database, scenario, layer="dep"):
-    """Plot the output maps for a scenario."""
+    """Plot the SFINCS output maps for a scenario."""
     if layer not in ["dep", "floodmap"]:
         raise ValueError("Select valid SFINCS map data layer")
 
@@ -139,6 +140,21 @@ def draw_scenario_sfincs(database, scenario, layer="dep"):
         map = add_sfincs_dep_map(map, sf)
 
     del sf
+
+    return map
+
+
+def draw_scenario_fiat(database, scenario, agg_layer):
+    """Plot the FIAT output maps for a scenario."""
+    valid_aggs = ["building_footprints", *list_agg_areas(database)]
+    if agg_layer not in valid_aggs:
+        raise ValueError(f"{agg_layer} not among valid options {valid_aggs}")
+
+    map = create_base_map(database)
+    map.add(LayersControl(position="topleft"))
+
+    map = add_floodmap(map, database, scenario)
+    map = add_fiat_impact(map, database, scenario, agg_layer)
 
     return map
 
@@ -191,8 +207,10 @@ def add_floodmap(map, database, scenario):
         layer_name="Floodmap",
     )
     lgnd_control = LegendControl(lgnd, title="Flood Depth [m]", position="bottomleft")
+    floodmap_layer = get_layer_by_name(map, "Floodmap")
+    floodmap_layer.subitems = floodmap_layer.subitems + (lgnd_control,)
 
-    map.add(lgnd_control)
+    # map.add(lgnd_control)
 
     return map
 

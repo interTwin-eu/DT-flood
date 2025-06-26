@@ -2,14 +2,66 @@
 
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
+import matplotlib as mpl
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import numpy as np
+from ipyleaflet import LegendControl
+from mapclassify import NaturalBreaks
 from matplotlib.cm import get_cmap
 
 
 def list_agg_areas(database):
     """Return list of available aggregation area types."""
     return list(database.get_aggregation_areas().keys())
+
+
+def add_fiat_impact(map, database, scenario, agg_layer):
+    """Add aggregated impacts to map."""
+    if agg_layer in list_agg_areas(database):
+        info = "on_click"
+        column = "TotalDamageEvent"
+        impacts = database.get_aggregated_impacts(scenario)[agg_layer]
+    else:
+        info = ""
+        column = "Total Damage"
+        impacts = database.get_building_footprint_impacts(scenario)
+
+    cmap = mpl.colormaps["YlOrRd"]
+    k = 5
+
+    nb5 = NaturalBreaks(impacts[column], k=k)
+
+    legend_keys = nb5.get_legend_classes()
+    legend_values = cmap(np.linspace(0, 1, len(legend_keys)))
+    lgnd = {
+        legend_keys[i]: mpl.colors.rgb2hex(legend_values[i])
+        for i in range(len(legend_keys))
+    }
+
+    legend_control = LegendControl(lgnd, title="Total Damage", position="bottomright")
+
+    map.add_data(
+        impacts,
+        column=column,
+        cmap="YlOrRd",
+        k=k,
+        add_legend=False,
+        scheme="NaturalBreaks",
+        layer_name="Impact_Damage",
+        info_mode=info,
+        style={
+            "stroke": True,
+            "color": "black",
+            "weight": 1,
+            "opacity": 1,
+            "fillOpacity": 0.1,
+        },
+    )
+
+    map.add(legend_control)
+
+    return map
 
 
 def plot_fiat_model(fiat):
