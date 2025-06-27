@@ -84,7 +84,8 @@ ds = xr.open_dataset(wf_out)
 
 # Assuming constant timestep size in wflow
 time_diff = ds["time"][1] - ds["time"][0]
-t0 = xr.zeros_like(ds.isel(time=0))
+# t0 = xr.zeros_like(ds.isel(time=0))
+t0 = ds.isel(time=0)
 t0["time"] = t0["time"] - time_diff
 
 ds_final = xr.concat([t0, ds], dim="time")
