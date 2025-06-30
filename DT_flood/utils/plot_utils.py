@@ -15,6 +15,12 @@ from ipywidgets import Button, Image, Layout
 
 from DT_flood.utils.plotting.fiat import add_fiat_impact, list_agg_areas
 from DT_flood.utils.plotting.map_utils import get_layer_by_name, rm_layer_by_name
+from DT_flood.utils.plotting.ra2ce import (
+    add_ra2ce_network,
+    add_ra2ce_orig_dest,
+    add_ra2ce_orig_dest_legend,
+    button_rm_boxes,
+)
 from DT_flood.utils.plotting.sfincs import (
     add_sfincs_bzs_points,
     add_sfincs_dep_map,
@@ -27,7 +33,6 @@ from DT_flood.utils.plotting.sfincs import (
 
 
 def _handle_draw(target, action, geo_json, geometry):
-    # geometry.append([{action: geo_json}])
     if action != "remove":
         geometry.append(geo_json[0]["geometry"])
         for item in reversed(geometry):
@@ -75,7 +80,6 @@ def draw_database_map(database, agg_area_name=None, **kwargs):
             target=target, action=action, geo_json=geo_json, geometry=selected_geometry
         )
 
-    # def handle_click(event, feature, properties,):
     def handle_click(**kwargs):
         _handle_click(geometry=selected_geometry, agg_area_name=agg_area_name, **kwargs)
 
@@ -159,6 +163,18 @@ def draw_scenario_fiat(database, scenario, agg_layer):
     return map
 
 
+def draw_scenario_ra2ce(database, scenario):
+    """Plot RA2CE output map for a scenario."""
+    map = create_base_map(database)
+    map = add_floodmap(map, database, scenario)
+
+    map = add_ra2ce_network(map, database, scenario)
+    map = add_ra2ce_orig_dest(map, database, scenario)
+    map = add_ra2ce_orig_dest_legend(map)
+    map = button_rm_boxes(map)
+    return map
+
+
 def add_floodmap(map, database, scenario):
     """Add Floodmap layer to map."""
     database = database.database
@@ -209,8 +225,6 @@ def add_floodmap(map, database, scenario):
     lgnd_control = LegendControl(lgnd, title="Flood Depth [m]", position="bottomleft")
     floodmap_layer = get_layer_by_name(map, "Floodmap")
     floodmap_layer.subitems = floodmap_layer.subitems + (lgnd_control,)
-
-    # map.add(lgnd_control)
 
     return map
 

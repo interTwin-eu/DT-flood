@@ -7,14 +7,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from branca.colormap import LinearColormap
 from hydromt_sfincs import SfincsModel
-from ipycanvas import Canvas
-from ipyleaflet import CircleMarker, ColormapControl, GeoData, WidgetControl
+from ipyleaflet import ColormapControl, GeoData, WidgetControl
 from ipywidgets import HBox, Label, VBox
 from matplotlib import colors
 
 from DT_flood.utils.plotting.map_utils import (
     add_fig_to_widg,
     add_plot_box,
+    add_plot_marker,
+    legend_marker,
     rm_layer_by_name,
 )
 from DT_flood.utils.plotting.sfincs_styling import (
@@ -25,21 +26,7 @@ from DT_flood.utils.plotting.sfincs_styling import (
     geodata_dis_style,
     geodata_dis_style_point,
     hover_style,
-    legendmarker_base,
 )
-
-
-def _add_plot_marker(map, location):
-    """Add marker to map for timeseries plots."""
-    circle = CircleMarker(name="plot_marker")
-    circle.location = location
-    circle.radius = 8
-    circle.color = "black"
-    circle.fill_color = "black"
-    circle.weight = 3
-    circle.dashArray = 1
-    circle.fillOpacity = 1
-    map.add(circle)
 
 
 def get_model_bounds(database):
@@ -139,7 +126,7 @@ def add_sfincs_dis_points(map, sf):
         rm_layer_by_name(map, "plot_marker")
         im_wdg = add_plot_box(map)
         add_fig_to_widg(im_wdg, fig=fig)
-        _add_plot_marker(map, location=feature["geometry"]["coordinates"][::-1])
+        add_plot_marker(map, location=feature["geometry"]["coordinates"][::-1])
 
     geo_data.on_click(_update_plot_box)
 
@@ -176,31 +163,19 @@ def add_sfincs_bzs_points(map, sf):
         im_wdg = add_plot_box(map)
 
         add_fig_to_widg(im_widg=im_wdg, fig=fig)
-        _add_plot_marker(map, location=feature["geometry"]["coordinates"][::-1])
+        add_plot_marker(map, location=feature["geometry"]["coordinates"][::-1])
 
     geo_data.on_click(_update_plot_box)
 
     return map
 
 
-def _legend_marker(color):
-    canvas = Canvas(width=50, height=50)
-    canvas.fill_style = color
-    canvas.global_alpha = legendmarker_base["alpha"]
-    canvas.stroke_style = legendmarker_base["stroke"]
-    canvas.line_width = legendmarker_base["line_width"]
-    canvas.fill_circle(20, 15, 10)
-    canvas.stroke_circle(20, 15, 10)
-
-    return canvas
-
-
 def add_sfincs_legend(map):
     """Add legend to SFINCS map."""
-    canvas = _legend_marker(color=dis_color)
+    canvas = legend_marker(color=dis_color)
     dis_label = HBox([canvas, Label("Discharge points")])
 
-    canvas = _legend_marker(color=bzs_color)
+    canvas = legend_marker(color=bzs_color)
     bzs_label = HBox([canvas, Label("Waterlevel points")])
 
     title = Label("SFINCS Forcing points")

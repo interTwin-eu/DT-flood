@@ -22,4 +22,3 @@ geodata_bzs_style = {"fillColor": bzs_color, **_geodata_base_style}
 geodata_bzs_style_point = {"fillColor": bzs_color, **_geodata_base_style_point}
 
 hover_style = {"fillColor": "black", "fillOpacity": 0.4}
-legendmarker_base = {"stroke": "black", "line_width": 3, "alpha": 0.7}
