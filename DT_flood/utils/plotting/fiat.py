@@ -18,6 +18,7 @@ def list_agg_areas(database):
 
 def add_fiat_impact(map, database, scenario, agg_layer):
     """Add aggregated impacts to map."""
+    cmap_name = "inferno_r"
     if agg_layer in list_agg_areas(database):
         info = "on_click"
         column = "TotalDamageEvent"
@@ -27,36 +28,37 @@ def add_fiat_impact(map, database, scenario, agg_layer):
         column = "Total Damage"
         impacts = database.get_building_footprint_impacts(scenario)
 
-    cmap = mpl.colormaps["YlOrRd"]
+    cmap = mpl.colormaps[cmap_name]
     k = 5
 
     nb5 = NaturalBreaks(impacts[column], k=k)
 
-    legend_keys = nb5.get_legend_classes()
+    legend_keys = nb5.get_legend_classes("{:.2E}")
     legend_values = cmap(np.linspace(0, 1, len(legend_keys)))
     lgnd = {
         legend_keys[i]: mpl.colors.rgb2hex(legend_values[i])
         for i in range(len(legend_keys))
     }
 
-    legend_control = LegendControl(lgnd, title="Total Damage", position="bottomright")
+    legend_control = LegendControl(
+        lgnd, title="Total Damage [EUR]", position="bottomright"
+    )
 
     map.add_data(
         impacts,
         column=column,
-        cmap="YlOrRd",
+        cmap=cmap_name,
         k=k,
         add_legend=False,
         scheme="NaturalBreaks",
         layer_name="Impact_Damage",
         info_mode=info,
-        style={
-            "stroke": True,
-            "color": "black",
-            "weight": 1,
-            "opacity": 1,
-            "fillOpacity": 0.1,
+        style={"fillOpacity": 0.0, "weight": 3, "stroke": True},
+        style_callback=lambda feat: {
+            "color": feat["properties"]["color"],
+            "fillColor": feat["properties"]["color"],
         },
+        hover_style={"fillOpacity": 0.5},
     )
 
     map.add(legend_control)
