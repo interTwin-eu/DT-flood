@@ -4,6 +4,7 @@ import matplotlib as mpl
 import numpy as np
 import xarray as xr
 from ipyleaflet import (
+    ColormapControl,
     DrawControl,
     GeoData,
     GeomanDrawControl,
@@ -11,7 +12,7 @@ from ipyleaflet import (
     LegendControl,
     WidgetControl,
 )
-from ipywidgets import Button, Image, Layout
+from ipywidgets import Button, Image, Layout, ToggleButtons
 
 from DT_flood.utils.plotting.fiat import add_fiat_impact, list_agg_areas
 from DT_flood.utils.plotting.map_utils import get_layer_by_name, rm_layer_by_name
@@ -29,6 +30,12 @@ from DT_flood.utils.plotting.sfincs import (
     add_sfincs_riv_map,
     get_model_bounds,
     get_sfincs_scenario_model,
+)
+from DT_flood.utils.plotting.wflow import (
+    add_wflow_elev_map,
+    add_wflow_gauges_map,
+    add_wflow_geoms_map,
+    get_wflow_scenario_model,
 )
 
 
@@ -172,6 +179,46 @@ def draw_scenario_ra2ce(database, scenario):
     map = add_ra2ce_orig_dest(map, database, scenario)
     map = add_ra2ce_orig_dest_legend(map)
     map = button_rm_boxes(map)
+    return map
+
+
+def draw_scenario_wflow(database, scenario):
+    """Plot WFLOW maps for a scenario."""
+    map = create_base_map(database)
+
+    toggle = ToggleButtons(options=["Warmup", "Event"])
+
+    cntrl = WidgetControl(widget=toggle, position="topright")
+    map.add(cntrl)
+
+    def _update_map(map, mode):
+        wf = get_wflow_scenario_model(database, scenario, mode=mode.lower())
+
+        for layer in map.layers:
+            if "wflow" in layer.name:
+                map.remove(layer)
+        for control in map.controls:
+            if isinstance(control, ColormapControl):
+                map.remove(control)
+            elif isinstance(control, WidgetControl) and isinstance(
+                control.widget, Image
+            ):
+                map.remove(control)
+        rm_layer_by_name(map, "plot_marker")
+
+        map = add_wflow_elev_map(map, wf)
+        map = add_wflow_geoms_map(map, wf)
+        map = add_wflow_gauges_map(map, wf)
+
+    def _update_func(func, map):
+        def _new_func(change):
+            return func(map, change["new"])
+
+        return _new_func
+
+    redraw_func = _update_func(_update_map, map)
+    toggle.observe(redraw_func, "value")
+
     return map
 
 
