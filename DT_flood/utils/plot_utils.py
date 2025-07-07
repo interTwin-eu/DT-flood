@@ -1,189 +1,303 @@
 """Plot utility functions."""
-
-import cartopy.crs as ccrs
-import cartopy.io.img_tiles as cimgt
-import geopandas as gdp
-import geopandas as gpd
-import matplotlib.patches as mpatches
-import matplotlib.pyplot as plt
+import leafmap.leafmap as leafmap
+import matplotlib as mpl
 import numpy as np
-from matplotlib import colors
-from matplotlib.cm import get_cmap
+import xarray as xr
+from ipyleaflet import (
+    ColormapControl,
+    DrawControl,
+    GeoData,
+    GeomanDrawControl,
+    LayersControl,
+    LegendControl,
+    WidgetControl,
+)
+from ipywidgets import Button, Image, Layout, ToggleButtons
+
+from DT_flood.utils.plotting.fiat import add_fiat_impact, list_agg_areas
+from DT_flood.utils.plotting.map_utils import get_layer_by_name, rm_layer_by_name
+from DT_flood.utils.plotting.ra2ce import (
+    add_ra2ce_network,
+    add_ra2ce_orig_dest,
+    add_ra2ce_orig_dest_legend,
+    button_rm_boxes,
+)
+from DT_flood.utils.plotting.sfincs import (
+    add_sfincs_bzs_points,
+    add_sfincs_dep_map,
+    add_sfincs_dis_points,
+    add_sfincs_legend,
+    add_sfincs_riv_map,
+    get_model_bounds,
+    get_sfincs_scenario_model,
+)
+from DT_flood.utils.plotting.wflow import (
+    add_wflow_elev_map,
+    add_wflow_gauges_map,
+    add_wflow_geoms_map,
+    get_wflow_scenario_model,
+)
 
 
-def plot_wflow_model(wflow_model):
-    """Plot WFlow basemap.
+def _handle_draw(target, action, geo_json, geometry):
+    if action != "remove":
+        geometry.append(geo_json[0]["geometry"])
+        for item in reversed(geometry):
+            if item != geo_json[0]["geometry"]:
+                geometry.pop(geometry.index(item))
+    else:
+        for item in reversed(geometry):
+            geometry.pop(geometry.index(item))
+        target.clear()
 
-    Parameters
-    ----------
-    wflow_model : hydromt_wflow.WFlowModel
-        Wflow model instance from hydromt_wflow
-    """
-    if "wflow_dem" not in wflow_model.staticmaps:
-        wflow_model.read_staticmaps("staticmaps.nc")
+    return geometry
 
-    proj = ccrs.PlateCarree()
-    gdf_bas = wflow_model.basins
-    gdf_riv = wflow_model.rivers
-    dem = wflow_model.staticmaps["wflow_dem"].raster.mask_nodata()
 
-    vmin, vmax = dem.quantile([0.0, 0.98]).compute()
-    c_dem = plt.cm.terrain(np.linspace(0.25, 1, 256))
-    cmap = colors.LinearSegmentedColormap.from_list("dem", c_dem)
-    norm = colors.Normalize(vmin=vmin, vmax=vmax)
-    kwargs = dict(cmap=cmap, norm=norm)
-    cbar_kwargs = dict(shrink=0.8, label="Elevation [m]")
-
-    fig = plt.figure(figsize=(14, 7))
-    ax = fig.add_subplot(projection=proj)
-    ax.add_image(cimgt.QuadtreeTiles(), 10, alpha=0.5)
-    gdf_bas.boundary.plot(ax=ax, color="k", linewidth=1)
-    gdf_riv.plot(ax=ax, color="b", linewidth=gdf_riv["strord"] / 2, label="rivers")
-    dem.plot(ax=ax, **kwargs, cbar_kwargs=cbar_kwargs)
-
-    if "reservoirs" in wflow_model.geoms:
-        resv_kwargs = dict(
-            facecolor="blue", edgecolor="black", linewidth=1, label="reservoirs"
-        )
-        wflow_model.staticgeoms["reservoirs"].plot(ax=ax, **resv_kwargs)
-    if "Q_gauges" in wflow_model.results:
-        gauges_kwargs = dict(
-            facecolor="red",
-            marker="d",
-            markersize=30,
-            zorder=10,
-            edgecolor="w",
-            label="gauges",
-        )
-        gdf_gauges = gdp.GeoDataFrame(
-            {"geometry": wflow_model.results["Q_gauges"].geometry}
-        )
-        gdf_gauges.plot(ax=ax, **gauges_kwargs)
-    # wflow_model.staticgeoms['gauges_src'].plot(ax=ax, **gauges_kwargs)
-
-    _ = ax.legend(
-        # handles=[*ax.get_legend_handles_labels()[0], *patches],
-        title="Legend",
-        loc="lower right",
-        frameon=True,
-        framealpha=0.7,
-        edgecolor="k",
-        facecolor="white",
+def _handle_click(geometry, agg_area_name, **kwargs):
+    for item in reversed(geometry):
+        geometry.pop(geometry.index(item))
+    geometry.append(
+        {"agg_type": agg_area_name, "area_name": kwargs["properties"]["name"]}
     )
-    ax.xaxis.set_visible(True)
-    ax.yaxis.set_visible(True)
-    ax.set_xlabel("Longitude [deg]")
-    ax.set_ylabel("Latitude [deg]")
-    ax.set_title("WFlow base map")
+    return geometry
 
 
-def plot_fiat_model(fiat):
-    """Plot FIAT basemap.
+def create_base_map(database):
+    """Create base map layer in database region."""
+    [center] = database.get_model_boundary().dissolve().centroid.to_crs(4326)
+    center = [center.y, center.x]
 
-    Parameters
-    ----------
-    fiat : hydromt_fiat.FiatModel
-        FIAT model instance from hydromt_fiat
-    """
-    proj = ccrs.PlateCarree()
-    gdf_fiat = fiat.exposure.get_full_gdf(fiat.exposure.exposure_db)
-    by_type = []
-    for type in gdf_fiat["Primary Object Type"].unique():
-        by_type.append(gdf_fiat[gdf_fiat["Primary Object Type"] == type])
+    layout = Layout(height="1200px")
 
-    fig = plt.figure(figsize=(14, 10))
-    ax = fig.add_subplot(projection=proj)
-    ax.add_image(cimgt.OSM(), 10, interpolation="bilinear", alpha=0.3)
+    m = leafmap.Map(center=center, zoom=10, scroll_wheel_zoom=True, layout=layout)
 
-    cmaps = {"residential": "Reds", "industrial": "Blues", "commercial": "Greens"}
+    for control in m.controls:
+        if isinstance(control, DrawControl):
+            m.remove(control)
 
-    handles = []
-    patches = []
-    for gdf in by_type:
-        class_name = gdf["Primary Object Type"].unique()[0]
-        # cmap = get_cmap(cmaps[class_name])
-        color = get_cmap(cmaps[class_name])(0.2)
-        kwargs = dict(facecolor=color, edgecolor="k", linewidth=1, label=class_name)
-        patches.append(mpatches.Patch(**kwargs))
-        handles.append(
-            gdf.plot(
-                ax=ax,
-                column="Max Potential Damage: Total",
-                scheme="quantiles",
-                cmap=get_cmap(cmaps[class_name]),
-            )
+    return m
+
+
+def draw_database_map(database, agg_area_name=None, **kwargs):
+    """Draw interactive map at database location."""
+    selected_geometry = []
+
+    def handle_draw(target, action, geo_json):
+        _handle_draw(
+            target=target, action=action, geo_json=geo_json, geometry=selected_geometry
         )
 
-    ax.legend(
-        handles=[*handles, *patches],
-        title="Legend",
-        loc="lower right",
-        frameon=True,
-        framealpha=0.7,
-        edgecolor="k",
-        facecolor="white",
+    def handle_click(**kwargs):
+        _handle_click(geometry=selected_geometry, agg_area_name=agg_area_name, **kwargs)
+
+    if agg_area_name is not None:
+        agg_area = database.get_aggregation_areas()[agg_area_name]
+
+    m = create_base_map(database=database)
+
+    geodata = GeoData(
+        geo_dataframe=get_model_bounds(database),
+        style={"color": "black", "fillOpacity": 0, "dashArray": "8"},
+        name="SFINCS model boundary",
     )
-    ax.set_title("Delft-FIAT basemap")
-    ax.xaxis.set_visible(True)
-    ax.yaxis.set_visible(True)
-    ax.set_ylabel("Latitude [deg]")
-    ax.set_xlabel("Longitude [deg]")
 
+    m.add(geodata)
 
-def plot_sfincs_model(sf):
-    """Plot SFINCS basemap.
-
-    Parameters
-    ----------
-    sf : hydromt_sfincs.SfincsModel
-        SFINCS model instance from hydromt
-    """
-    proj = ccrs.PlateCarree()
-    bzs_points = gpd.GeoDataFrame(
-        {"index": sf.forcing["bzs"].index, "geometry": sf.forcing["bzs"].geometry},
-        crs=sf.crs,
-    ).to_crs("EPSG:4326")
-    # dis_points = gpd.GeoDataFrame({"index": sf.forcing['dis'].index, "geometry": sf.forcing['dis'].geometry}, crs=sf.crs).to_crs("EPSG:4326")
-
-    vmin, vmax = sf.grid["dep"].raster.mask_nodata().quantile([0, 0.98]).values
-    c_dem = plt.cm.terrain(np.linspace(0.25, 1, int(vmax)))
-    c_bat = plt.cm.terrain(np.linspace(0, 0.17, abs(int(vmin))))
-    c_dem = np.vstack((c_bat, c_dem))
-    cmap = colors.LinearSegmentedColormap.from_list("dem", c_dem)
-    norm = colors.Normalize(vmin=vmin, vmax=vmax)
-
-    fig = plt.figure(figsize=(14, 10))
-    ax = fig.add_subplot(projection=proj)
-    ax.add_image(cimgt.OSM(), 10, interpolation="bilinear", alpha=0.5)
-
-    sf.grid.rio.reproject("EPSG:4326")["dep"].plot(
-        ax=ax,
-        cmap=cmap,
-        norm=norm,
-        cbar_kwargs={"shrink": 0.85, "label": "DEM [m]", "pad": 0.03},
+    agg_area_layer = GeoData(
+        geo_dataframe=agg_area,
+        style={"color": "#3366cc", "fillColor": "#3366cc", "fillOpacity": 0.1},
+        hover_style={"fillColor": "#3366cc", "fillOpacity": 0.5},
+        name=f"Aggregation areas {agg_area_name}",
     )
-    # sf.geoms['obs'].to_crs('EPSG:4326').plot(ax=ax, marker="d", facecolor='w', edgecolor='r', markersize=60, label="obs points", zorder=10)
-    # sf.geoms['rivers_inflow'].to_crs("EPSG:4326").plot(ax=ax, color='darkblue', label="Rivers")
-    bzs_points.plot(
-        ax=ax,
-        marker="^",
-        facecolor="w",
-        edgecolor="k",
-        markersize=60,
-        label="bzs points",
-        zorder=10,
+    agg_area_layer.on_click(handle_click)
+    m.add(agg_area_layer)
+
+    m.add(LayersControl())
+
+    draw_control = GeomanDrawControl()
+    draw_control.on_draw(handle_draw)
+    m.add(draw_control)
+
+    legend = LegendControl({"SFINCS boundary": "black"}, title="Legend")
+    if agg_area_name:
+        legend.add_legend_element(f"{agg_area_name}", "#3366cc")
+    legend.position = "bottomright"
+
+    m.add(legend)
+
+    return m, selected_geometry
+
+
+def draw_scenario_sfincs(database, scenario, layer="dep"):
+    """Plot the SFINCS output maps for a scenario."""
+    if layer not in ["dep", "floodmap"]:
+        raise ValueError("Select valid SFINCS map data layer")
+
+    map = create_base_map(database)
+    map.add(LayersControl(position="topleft"))
+    map = button_rm_plots(map)
+
+    sf = get_sfincs_scenario_model(database, scenario)
+
+    map = add_sfincs_riv_map(map, sf)
+    map = add_sfincs_dis_points(map, sf)
+    map = add_sfincs_bzs_points(map, sf)
+
+    map = add_sfincs_legend(map)
+
+    if layer == "floodmap":
+        map = add_floodmap(map, database, scenario)
+    if layer == "dep":
+        map = add_sfincs_dep_map(map, sf)
+
+    del sf
+
+    return map
+
+
+def draw_scenario_fiat(database, scenario, agg_layer):
+    """Plot the FIAT output maps for a scenario."""
+    valid_aggs = ["building_footprints", *list_agg_areas(database)]
+    if agg_layer not in valid_aggs:
+        raise ValueError(f"{agg_layer} not among valid options {valid_aggs}")
+
+    map = create_base_map(database)
+    map.add(LayersControl(position="topleft"))
+
+    map = add_floodmap(map, database, scenario)
+    map = add_fiat_impact(map, database, scenario, agg_layer)
+
+    return map
+
+
+def draw_scenario_ra2ce(database, scenario):
+    """Plot RA2CE output map for a scenario."""
+    map = create_base_map(database)
+    map = add_floodmap(map, database, scenario)
+
+    map = add_ra2ce_network(map, database, scenario)
+    map = add_ra2ce_orig_dest(map, database, scenario)
+    map = add_ra2ce_orig_dest_legend(map)
+    map = button_rm_boxes(map)
+    return map
+
+
+def draw_scenario_wflow(database, scenario):
+    """Plot WFLOW maps for a scenario."""
+    map = create_base_map(database)
+
+    toggle = ToggleButtons(options=["Warmup", "Event"])
+
+    cntrl = WidgetControl(widget=toggle, position="topright")
+    map.add(cntrl)
+
+    def _update_map(map, mode):
+        wf = get_wflow_scenario_model(database, scenario, mode=mode.lower())
+
+        for layer in map.layers:
+            if "wflow" in layer.name:
+                map.remove(layer)
+        for control in map.controls:
+            if isinstance(control, ColormapControl):
+                map.remove(control)
+            elif isinstance(control, WidgetControl) and isinstance(
+                control.widget, Image
+            ):
+                map.remove(control)
+        rm_layer_by_name(map, "plot_marker")
+
+        map = add_wflow_elev_map(map, wf)
+        map = add_wflow_geoms_map(map, wf)
+        map = add_wflow_gauges_map(map, wf)
+
+    def _update_func(func, map):
+        def _new_func(change):
+            return func(map, change["new"])
+
+        return _new_func
+
+    redraw_func = _update_func(_update_map, map)
+    toggle.observe(redraw_func, "value")
+
+    return map
+
+
+def add_floodmap(map, database, scenario):
+    """Add Floodmap layer to map."""
+    database = database.database
+    flood_fn = (
+        database.scenarios.output_path.joinpath(scenario)
+        / "Flooding"
+        / f"FloodMap_{scenario}.tif"
     )
-    # dis_points.plot(ax=ax, marker=">", facecolor='w', edgecolor='k', markersize=60, label="dis points", zorder=10)
-    ax.legend(
-        title="Legend",
-        loc="upper right",
-        frameon=True,
-        framealpha=0.7,
-        edgecolor="k",
-        facecolor="white",
+    base_fn = database.static_path / "dem" / "dep_subgrid.tif"
+
+    flood = xr.open_dataarray(flood_fn)
+    base = xr.open_dataarray(base_fn)
+
+    base = base.sel(band=1)
+    flood = flood.sel(band=1)
+    base = base.interp_like(flood)
+    flood = flood.where(base >= 0, np.nan)
+
+    base.close()
+    del base
+
+    vmin = 0
+    vmax = 2
+    N = 5
+    bins = [*np.linspace(vmin, vmax, N), np.inf]
+
+    flood_grp = flood.groupby_bins(flood, bins)
+    flood_bin = flood_grp.map(lambda x: x - x + x.min(), shortcut=False)
+    flood_bin = flood_bin.sortby([flood_bin.x]).interp_like(flood, method="nearest")
+
+    flood.close()
+    del flood
+
+    cmap = mpl.colormaps["Blues"]
+    legend_keys = [f"<={i}" for i in bins[1:-1]]
+    legend_keys.append(f">{bins[-2]}")
+    legend_vals = cmap(np.linspace(0, 1, N))
+    lgnd = {legend_keys[i]: mpl.colors.rgb2hex(legend_vals[i]) for i in range(N)}
+
+    map.add_raster(
+        flood_bin,
+        vmin=vmin,
+        vmax=vmax,
+        nodata=np.nan,
+        colormap=cmap,
+        layer_name="Floodmap",
     )
-    ax.xaxis.set_visible(True)
-    ax.yaxis.set_visible(True)
-    ax.set_ylabel("Latitude [deg]")
-    ax.set_xlabel("Longitude [deg]")
-    ax.set_title("SFINCS basemap DEM")
+    lgnd_control = LegendControl(lgnd, title="Flood Depth [m]", position="bottomleft")
+    floodmap_layer = get_layer_by_name(map, "Floodmap")
+    floodmap_layer.subitems = floodmap_layer.subitems + (lgnd_control,)
+
+    return map
+
+
+def button_rm_plots(map):
+    """Add button to map to remove plot box."""
+
+    def _rm_plot(button, **kwargs):
+        controls = [
+            control for control in map.controls if isinstance(control, WidgetControl)
+        ]
+        for control in controls:
+            if isinstance(control.widget, Image):
+                map.remove(control)
+
+        names = [layer.name for layer in map.layers]
+        for name in names:
+            if "plot_" in name:
+                rm_layer_by_name(map, name)
+
+    button = Button(
+        description="Remove plot box",
+    )
+    button.on_click(_rm_plot)
+
+    control = WidgetControl(widget=button, position="topleft")
+    map.add(control)
+
+    return map

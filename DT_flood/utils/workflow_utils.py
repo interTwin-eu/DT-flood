@@ -8,7 +8,7 @@ from typing import Union
 import yaml
 from flood_adapt.dbs_classes.interface.database import IDatabase
 
-from DT_flood.utils.fa_scenario_utils import create_scenario, init_scenario
+from DT_flood.utils.fa_scenario_utils import init_scenario
 from DT_flood.workflows import SCRIPT_DIR, WORFKFLOW_DIR
 
 
@@ -29,6 +29,10 @@ yaml.add_representer(quoted, quoted_presenter)
 def run_scenario(
     database: Union[str, os.PathLike],
     scenario_name: str,
+    oscar_endpoint: str,
+    oscar_token: str,
+    debug: bool = False,
+    **kwargs,
 ) -> None:
     """Run FloodAdapt scenario.
 
@@ -39,12 +43,14 @@ def run_scenario(
     scenario_name : str
         name of scenario to execute
     """
-    db, scen_init = init_scenario(database, scenario_name)
-
-    scen_obj = create_scenario(db, scen_init)
-
-    create_workflow_config(db, scen_obj)
-    run_fa_scenario_workflow(db, scen_obj)
+    create_workflow_config(
+        database=database,
+        scenario=scenario_name,
+        oscar_endpoint=oscar_endpoint,
+        oscar_token=oscar_token,
+        **kwargs,
+    )
+    run_fa_scenario_workflow(database=database, scenario=scenario_name, debug=debug)
 
 
 def create_workflow_config(
@@ -55,7 +61,7 @@ def create_workflow_config(
     cwl_workflow: Union[str, os.PathLike] = WORFKFLOW_DIR / "run_fa_scenario.cwl",
     script_folder: Union[str, os.PathLike] = SCRIPT_DIR,
     oscar_output: str = "output",
-    interlink_offlaoad: bool = False,
+    interlink_offload: bool = False,
 ) -> None:
     """Write Config file for CWL workflow to FloodAdapt database.
 
@@ -81,6 +87,8 @@ def create_workflow_config(
     # Parse inputs
     if isinstance(database, str) or isinstance(database, Path):
         database, _ = init_scenario(database, scenario)
+
+    database = database.database
 
     if not isinstance(cwl_workflow, Path):
         cwl_workflow = Path(cwl_workflow)
@@ -123,13 +131,13 @@ def create_workflow_config(
     cwl_config["refreshtoken"] = quoted(oscar_token)
 
     cwl_config["service_wflow"] = (
-        quoted("wflow-interlink") if interlink_offlaoad else quoted("wflow")
+        quoted("wflow-interlink") if interlink_offload else quoted("wflow")
     )
     cwl_config["service_sfincs"] = (
-        quoted("sfincs-interlink") if interlink_offlaoad else quoted("sfincs")
+        quoted("sfincs-interlink") if interlink_offload else quoted("sfincs")
     )
     cwl_config["service_ra2ce"] = (
-        quoted("ra2ce-interlink") if interlink_offlaoad else quoted("ra2ce")
+        quoted("ra2ce-interlink") if interlink_offload else quoted("ra2ce")
     )
 
     print(f"Write Config file {config_fn} to folder {config_fn}")
@@ -156,6 +164,8 @@ def run_fa_scenario_workflow(
     if isinstance(database, str) or isinstance(database, Path):
         database, _ = init_scenario(database, scenario)
 
+    database = database.database
+
     workflow_fn = WORFKFLOW_DIR / "run_fa_scenario.cwl"
     config_fn = (
         database.input_path / "scenarios" / scenario / f"cwl_config_{scenario}.yml"
@@ -171,7 +181,7 @@ def run_fa_scenario_workflow(
     )
 
     if debug:
-        cmd_run = f"cwltool --outdir {str(database.base_path)} --debug {str(workflow_fn)} {str(config_fn)} | tee {str(logfile)}"
+        cmd_run = f"cwltool --outdir {str(database.base_path)} --cachedir {database.base_path.joinpath('cachedir').as_posix()} {str(workflow_fn)} {str(config_fn)} | tee {str(logfile)}"
     else:
         cmd_run = f"cwltool --outdir {str(database.base_path)} {str(workflow_fn)} {str(config_fn)} | tee {str(logfile)}"
     print("Executing workflow")

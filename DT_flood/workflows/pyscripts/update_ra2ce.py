@@ -60,7 +60,16 @@ network.hazard = network_hazard
 
 analysis = AnalysisConfigDataReader().read(out_folder / "analysis.ini")
 analysis.analyses[0].threshold = 0.5
-analysis.analyses[0].calculate_route_without_disruption = False
+analysis.analyses[0].calculate_route_without_disruption = True
+
+analysis.origins_destinations.origins = "origins.gpkg"
+analysis.origins_destinations.destinations = "destinations.gpkg"
+analysis.origins_destinations.origins_names = "A"
+analysis.origins_destinations.destinations_names = "B"
+analysis.origins_destinations.id_name_origin_destinatiom = "OBJECT ID"
+analysis.origins_destinations.origin_count = "POPULATION"
+analysis.origins_destinations.category = "category"
+
 
 # Relative paths are resolved when reading in config data
 # Reset them as workdir will change between workflow steps

@@ -22,16 +22,21 @@ floodmap_fn = Path(args.floodmap)
 waterlevel_fn = Path(args.waterlevelmap)
 
 # Fetch FA database, misc
-database, scenario_config = init_scenario(database_root, scenario_name)
-scenario = database.scenarios.get(scenario_config["name"])
-map_type = database.site.attrs.fiat.config.floodmap_type
+database, scenario = init_scenario(database_root, scenario_name)
+database = database.database
+map_type = database.site.fiat.config.floodmap_type
 
+print("Fetching FIAT model")
 fa_adpt = database.static.get_fiat_model()
 
-fa_adpt.add_projection(scenario.projection)
-for measure in scenario.strategy.get_impact_strategy().measures:
+print("Setting up FIAT projection")
+fa_adpt.add_projection(database.projections.get(scenario.projection))
+strategy = database.strategies.get(scenario.strategy)
+print("Adding FIAT measures")
+for measure in strategy.get_measures():
     fa_adpt.add_measure(measure)
 
+print("Setting up FIAT hazard")
 if map_type == "water_level":
     map_fn = waterlevel_fn
     var = "zsmax"
@@ -41,7 +46,12 @@ elif map_type == "water_depth":
 else:
     raise ValueError("No Valid Floodmap Type")
 
+print(f"Floodmap: {map_fn}")
+print(f"Floodmap type: {var}")
 fa_adpt._model.setup_hazard(map_fn=map_fn, map_type=map_type, var=var, nodata=-999)
 
-fiat_path = scenario.impacts.impacts_path / "fiat_model"
+fiat_path = database.output_path.joinpath(
+    "scenarios", scenario.name, "Impacts", "fiat_model"
+)
+print(f"Saving FIAT model to {fiat_path}")
 fa_adpt.write(path_out=fiat_path)

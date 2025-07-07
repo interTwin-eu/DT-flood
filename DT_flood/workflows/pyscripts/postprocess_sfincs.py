@@ -26,8 +26,9 @@ database_root = Path(args.input).parent
 sf_root = Path(args.sfincsdir) / "data"
 
 # Fetch FA database, misc
-database, scenario_config = init_scenario(database_root, scenario_name)
-demfile = database.static_path / "dem" / database.site.attrs.sfincs.dem.filename
+database, scenario = init_scenario(database_root, scenario_name)
+database = database.database
+demfile = database.static_path / "dem" / database.site.sfincs.dem.filename
 floodmap_fn = f"FloodMap_{scenario_name}.tif"
 zsmax_fn = "max_water_level_map.nc"
 

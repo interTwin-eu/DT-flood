@@ -8,19 +8,24 @@ dependencies:
   - cwltool
   - delft_fiat
   - ipykernel
+  - ipyleaflet
+  - ipycanvas
   - numpy
   - numexpr
   - hydromt_wflow
+  - leafmap
   - mapclassify
+  - numpy<=2.2
   - python=3.11
   - ruff
   - pip
   - pip:
     - jupyter
     - pre-commit
-    - git+https://github.com/Deltares-research/FloodAdapt.git
+    - git+https://github.com/Deltares-research/FloodAdapt.git@v0.3.2
     - gwwapi
     - liboidcagent
     - minio
     - oscar-python
     - rucio-clients
+    - -e .
