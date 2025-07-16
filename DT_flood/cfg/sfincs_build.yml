@@ -1,0 +1,50 @@
+setup_grid_from_region:
+  res: <res>
+  crs: utm
+  rotated: False
+  region:
+    geom: data/basins.geojson
+
+setup_dep:
+  datasets_dep:
+    - elevtn: data/topo.nc
+      zmin: 0.001
+    - elevtn: data/bathy.nc
+
+setup_mask_active:
+  zmax: 0
+  zmin: -30
+  include_mask: data/basins.geojson
+
+setup_mask_active1:
+  fill_area: 10
+  reset_mask: False
+
+setup_mask_bounds:
+  btype: waterlevel
+  zmax: -5
+  exclude_mask: data/basins.geojson
+
+setup_river_inflow:
+  rivers: data/rivers.gpkg
+  # hydrography: data/hydrography.nc
+  river_len: 1
+  river_upa: 1
+  keep_rivers_geom: True
+  reverse_river_geom: True
+
+setup_cn_infiltration:
+  cn: data/infiltration.nc
+  antecedent_moisture: avg
+
+setup_subgrid:
+  datasets_dep:
+    - elevtn: data/topo.nc
+      zmin: 0.0001
+    - elevtn: data/bathy.nc
+  datasets_rgh:
+    - lulc: data/lulc.nc
+      reclass_table: data/lulc_mapping.csv
+  nr_subgrid_pixels: <nr_subgrid>
+  write_dep_tif: True
+  write_man_tif: False
