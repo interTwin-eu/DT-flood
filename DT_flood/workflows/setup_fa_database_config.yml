@@ -12,6 +12,9 @@ script_setup_ra2ce:
 script_build_ra2ce:
   class: File
   path: ./pyscripts/build_ra2ce.py
+script_setup_fiat:
+  class: File
+  path: ./pyscripts/setup_fiat.py
 script_oscar:
   class: File
   path: ./pyscripts/oscar.py
