@@ -1,6 +1,11 @@
 region_file:
   class: File
   path: /home/wotromp/InterTwin/workflow_refactor/model_setup/HumberDelta_large.geojson
+script_setup_sfincs:
+  class: File
+  path: ./pyscripts/setup_sfincs.py
+sf_res: 100
+sf_subgrid_pixels: 6
 script_setup_ra2ce:
   class: File
   path: ./pyscripts/setup_ra2ce.py

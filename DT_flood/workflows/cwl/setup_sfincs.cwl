@@ -8,12 +8,8 @@ inputs:
         type: File
         inputBinding:
             position: -1
-    # model_dir:
-    #     type: string
-    #     inputBinding:
-    #         prefix: "--modeldir"
     region_file:
-        type: string
+        type: File
         inputBinding:
             prefix: "--regionfile"
     res:
@@ -54,7 +50,3 @@ outputs:
         type: Directory
         outputBinding:
             glob: "overland"
-    data_dir:
-        type: Directory
-        outputBinding:
-            glob: "data"

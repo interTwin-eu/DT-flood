@@ -5,29 +5,36 @@ from pathlib import Path
 from shutil import rmtree
 
 import geopandas as gpd
+import numpy as np
 import xarray as xr
 from hydromt.config import configread, configwrite
 from hydromt.log import setuplog
 from hydromt_sfincs import SfincsModel
 
 from DT_flood.cfg import CFG_DIR
-from DT_flood.utils.data_utils import download_dataset, download_tiled_data, get_geodata
+from DT_flood.utils.data_utils import (
+    download_dataset,
+    download_single,
+    download_tiled_data,
+    get_geodata,
+)
 
 parser = argparse.ArgumentParser()
 # parser.add_argument("--modeldir")
 parser.add_argument("--regionfile")
 
-parser.add_argument("--res")
-parser.add_argument("--subgridpixels")
+parser.add_argument("--res", type=float)
+parser.add_argument("--subgridpixels", type=int)
 
 parser.add_argument("--basindata", default="basin_atlas_v10")
 parser.add_argument("--topodata", default="fabdem")
 parser.add_argument("--bathydata", default="gebco")
-parser.add_argument("--riverdata", default="rivers_lin2019")
+parser.add_argument("--riverdata", default="merit_hydro")
+# parser.add_argument("--riverdata", default="rivers_lin2019")
 parser.add_argument("--lulcdata", default="globcover")
 parser.add_argument("--infiltdata", default="gcn250")
 
-args = parser.parse_args()
+args = vars(parser.parse_args())
 
 # Unpack args
 # sf_root = Path(args["modeldir"]/"overland")
@@ -47,6 +54,11 @@ sf_config = CFG_DIR / "sfincs_build.yml"
 
 datafolder = Path.cwd() / "data"
 datafolder.mkdir(exist_ok=True)
+
+
+def _set_spatial_ref(ds):
+    return ds.set_coords(("spatial_ref"))
+
 
 ## Fetch all the relevant data from datalake
 
@@ -68,10 +80,18 @@ gebco = xr.open_mfdataset(gebco_fn)
 gebco.to_netcdf(datafolder / "bathy.nc")
 del gebco
 
-# Get river data
-rivers = get_geodata(river_scope, bbox=gdf.total_bounds)
-rivers.to_file(datafolder / "rivers.gpkg", driver="GPKG")
-del rivers
+# # Get river data
+# rivers = get_geodata(river_scope, bbox=gdf.total_bounds)
+# rivers.to_file(datafolder/"rivers.gpkg", driver="GPKG")
+# del rivers
+
+# Get merit hydro
+outlist = download_tiled_data(dataset=river_scope, bbox=gdf.total_bounds)
+ds_full = xr.open_mfdataset(outlist, preprocess=_set_spatial_ref)
+ds_full["flwdir"] = ds_full.flwdir.astype(np.uint8)
+ds_full.to_netcdf(datafolder / "hydrography.nc")
+del ds_full
+index_fn = download_single(filename=f"{river_scope}_index.gpkg", rucio_scope="wtromp")
 
 # Get infiltration data
 gcn250_fns = download_dataset(dataset=infilt_scope)
@@ -102,7 +122,7 @@ opt = configread(sf_config)
 opt["setup_grid_from_region"].update(res=res)
 opt["setup_subgrid"].update(nr_subgrid_pixels=nr_subgrid_pixels)
 
-sf = SfincsModel(root=sf_root, mode="w+", logger=logger)
-sf.build(opt=opt)
 
+sf = SfincsModel(root=sf_root, mode="w+", logger=logger)
 configwrite(sf_root / "sfincs_build.yml", opt)
+sf.build(opt=opt)
