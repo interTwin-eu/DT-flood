@@ -5,6 +5,8 @@ import json
 import os
 import tarfile
 import uuid
+from pathlib import Path
+from shutil import copy
 
 import requests
 from minio import Minio
@@ -21,6 +23,7 @@ parser.add_argument("--refreshtoken", nargs="?")
 parser.add_argument("--service")
 parser.add_argument("--service_directory")
 parser.add_argument("--output", required=True)
+parser.add_argument("--runscript", nargs="?")
 
 args = parser.parse_args()
 
@@ -186,6 +189,8 @@ def compress():
     """Compress input files."""
     print("Compressing input")
     files = os.listdir(filename)
+    for file in files:
+        print(file)
     tar_file_ = tarfile.open(filename + ".tar", "w")
     for x in files:
         tar_file_.add(name=filename + "/" + x, arcname=x)
@@ -200,6 +205,10 @@ def decompress(output_file):
         for member in tar.getmembers():
             tar.extract(member, path=output)
 
+
+if args.runscript:
+    runscript = Path(args.runscript)
+    copy(runscript, Path(filename, runscript.name))
 
 input_file = compress()
 client = check_oscar_connection()

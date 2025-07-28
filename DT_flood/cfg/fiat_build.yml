@@ -1,0 +1,31 @@
+setup_output:
+  output_dir: "output"
+  output_csv_name: "output.csv"
+  output_vector_name: "spatial.gpkg"
+
+setup_vulnerability:
+  vulnerability_fn: "jrc_vulnerability_curves"
+  vulnerability_identifiers_and_linking_fn: "jrc_vulnerability_curves_linking"
+  continent: "Europe"
+  unit: "meters"
+
+setup_exposure_buildings:
+  asset_locations: "OSM"
+  occupancy_type: "OSM"
+  max_potential_damage: "jrc_damage_values"
+  ground_floor_height: 0
+  unit: "meters"
+  country: "United Kingdom"
+  ground_elevation: <sfincs_subgrid>
+
+setup_aggregation_areas:
+  aggregation_area_fn: data/gadm_ADM_3.gpkg
+  attribute_names: "NAME_3"
+  label_names: "AdminZonesLevel3"
+  file_names: "gadm_level3"
+
+setup_aggregation_areas1:
+  aggregation_area_fn: data/gadm_ADM_4.gpkg
+  attribute_names: "NAME_4"
+  label_names: "AdminZonesLevel4"
+  file_names: "gadm_level4"

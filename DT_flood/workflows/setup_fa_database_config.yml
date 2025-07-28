@@ -1,0 +1,19 @@
+region_file:
+  class: File
+  path: /home/wotromp/InterTwin/workflow_refactor/model_setup/HumberDelta_large.geojson
+script_setup_ra2ce:
+  class: File
+  path: ./pyscripts/setup_ra2ce.py
+script_build_ra2ce:
+  class: File
+  path: ./pyscripts/build_ra2ce.py
+script_oscar:
+  class: File
+  path: ./pyscripts/oscar.py
+endpoint: 'https://oscar-ukri.intertwin.fedcloud.eu'
+refreshtoken:
+service_ra2ce: ra2ce
+service_directory:
+  class: Directory
+  path: ./oscar_services/
+oscar_output: output

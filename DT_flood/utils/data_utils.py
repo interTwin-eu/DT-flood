@@ -159,7 +159,7 @@ def download_tiled_data(dataset: str, bbox: list[float], rucio_scope: str = "wtr
     return outlist
 
 
-def get_geodata(dataset: str, bbox: list[float], rucio_scope: str = "wtromp"):
+def get_geodata(dataset: str, bbox: list[float] = None, rucio_scope: str = "wtromp"):
     """Download dataset of singleton geodata file.
 
     Parameters
@@ -196,7 +196,10 @@ def get_geodata(dataset: str, bbox: list[float], rucio_scope: str = "wtromp"):
     for file in contents:
         download_client.download_dids([{"did": f"{file['scope']}:{file['name']}"}])
         fn = Path(file["scope"], file["name"])
-    gdf = gpd.read_file(fn, bbox=tuple(bbox))
+    if bbox is not None:
+        gdf = gpd.read_file(fn, bbox=tuple(bbox))
+    else:
+        gdf = gpd.read_file(fn)
 
     return gdf
 
@@ -353,3 +356,10 @@ def download_dataset(
         if not file.exists():
             raise FileNotFoundError(f"File {file} does not exist. Download failed.")
     return outlist
+
+
+def download_single(filename: str, rucio_scope: str):
+    """Download single file from rucio."""
+    download_client = DownloadClient()
+    download_client.download_dids([{"did": f"{rucio_scope}:{filename}"}])
+    return Path(rucio_scope, filename)

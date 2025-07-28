@@ -26,12 +26,12 @@ setup_mask_bounds:
   exclude_mask: data/basins.geojson
 
 setup_river_inflow:
-  rivers: data/rivers.gpkg
-  # hydrography: data/hydrography.nc
-  river_len: 1
-  river_upa: 1
+  # rivers: data/rivers.gpkg
+  hydrography: data/hydrography.nc
+  river_len: 1000
+  river_upa: 10
   keep_rivers_geom: True
-  reverse_river_geom: True
+  # reverse_river_geom: True
 
 setup_cn_infiltration:
   cn: data/infiltration.nc

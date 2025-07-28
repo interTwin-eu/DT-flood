@@ -44,6 +44,10 @@ inputs:
         type: string
         inputBinding:
             prefix: "--output"
+    runscript:
+        type: File?
+        inputBinding:
+            prefix: "--runscript"
 
 outputs:
     oscar_out:
