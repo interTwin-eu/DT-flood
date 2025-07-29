@@ -4,6 +4,7 @@ class: Workflow
 inputs:
     region_file: File
     script_setup_sfincs: File
+    script_setup_wflow: File
     script_setup_fiat: File
     script_setup_ra2ce: File
     script_build_ra2ce: File
@@ -37,6 +38,14 @@ steps:
         out:
             [sfincs_dir]
         run: ./cwl/setup_sfincs.cwl
+    setup_wflow:
+        in:
+            pyscript: script_setup_wflow
+            region_file: region_file
+            sfincs_root: setup_sfincs/sfincs_dir
+        out:
+            [wflow_dir]
+        run: ./cwl/setup_wflow.cwl
     setup_fiat:
         in:
             pyscript: script_setup_fiat
