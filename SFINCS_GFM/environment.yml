@@ -9,6 +9,7 @@ dependencies:
   - ipykernel
   - graphviz
   - jupyter_bokeh
+  - libgdal-hdf5
   - dask=2025.2.0
   - python=3.11.*
   - traitlets=5.14.3

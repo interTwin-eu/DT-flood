@@ -111,8 +111,10 @@ def wait_output_and_download(client, output_info, output_loc, execution_id):
         prefix="/".join(output_info["path"].split("/")[1:]),
         events=["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
     ) as events:
+        print(f"Exec id: {execution_id}")
         for event in events:
             outputfile = event["Records"][0]["s3"]["object"]["key"]
+            print(event)
             print(outputfile)
             if execution_id in outputfile:
                 break

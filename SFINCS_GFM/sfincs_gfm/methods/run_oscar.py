@@ -1,4 +1,5 @@
 from pathlib import Path
+from shutil import copytree, rmtree
 
 from hydroflows.workflow.method_parameters import Parameters
 from hydroflows.workflow.method import Method
@@ -58,10 +59,12 @@ class RunOscarService(Method):
     def _run(self):
 
         input_dir = self.input.input_file.parent.as_posix()
-        output_loc = self.params.output_loc
+        output_loc = self.params.output_loc.as_posix()
         endpoint = self.params.endpoint
         refreshtoken = self.params.refreshtoken
         service = self.params.service
+
+        tmp_dir = Path.cwd()/"temp"
 
         token = generate_token(refresh_token=refreshtoken)
 
@@ -74,4 +77,19 @@ class RunOscarService(Method):
         print(f"Input file: {inputs}")
         execution_id = upload_file_minio(minio_client, input_info=input_info, input_file=inputs)
         outputs = wait_output_and_download(minio_client, output_info=output_info, execution_id=execution_id, output_loc=output_loc)
-        decompress(output_file=outputs, output_loc=output_loc)
+        decompress(output_file=outputs, output_loc=tmp_dir)
+
+        decomp = tmp_dir.glob(f"**/{self.output.output_file.name}")
+        decomp_files = [x for x in decomp if x.is_file()]
+        if len(decomp_files)>1:
+            parents = [file.parent for file in decomp_files]
+            if not all(x==parents[0] for x in parents):
+                raise ValueError("Multiple possible output directories found")
+            out_tmp_dir = parents[0]
+        else:
+            out_tmp_dir = decomp_files[0].parent
+
+        copytree(out_tmp_dir, output_loc, dirs_exist_ok=True)
+        rmtree(out_tmp_dir)
+
+

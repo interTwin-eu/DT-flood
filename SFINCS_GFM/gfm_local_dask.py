@@ -17,15 +17,15 @@ print("Finished flood decision")
 print(fd)
 # %%
 
-fd.hvplot.image(
-    x="longitude",
-    y="latitude",
-    rasterize=True,
-    geo=True,
-    tiles=True,
-    project=True,
-    cmap=["rgba(0, 0, 1, 0.1)", "darkred"],
-    cticks=[(0, "non-flood"), (1, "flood")],
-    frame_height=400
-)
+# fd.hvplot.image(
+#     x="longitude",
+#     y="latitude",
+#     rasterize=True,
+#     geo=True,
+#     tiles=True,
+#     project=True,
+#     cmap=["rgba(0, 0, 1, 0.1)", "darkred"],
+#     cticks=[(0, "non-flood"), (1, "flood")],
+#     frame_height=400
+# )
 # %%
