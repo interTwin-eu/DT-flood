@@ -24,14 +24,14 @@ def copy_sfincs_model(src: Path, dest: Path) -> None:
     
     copy(src / "sfincs.inp", dest / "sfincs.inp")
 
-def parse_local_wl_data(wl_file: Path) -> pd.DataFrame:
+def parse_local_wl_data(wl_file: Path, col_name) -> pd.DataFrame:
     
     df = pd.read_csv(wl_file, delimiter=";", header=0)
-    df = df.rename(columns={"timestamp": "time", "value": 1})
-    df[1] = pd.to_numeric(df[1])
+    df = df.rename(columns={"timestamp": "time", "value": col_name})
+    df[col_name] = pd.to_numeric(df[col_name])
 
     time = pd.to_datetime(df["time"])
-    bzs = (df[1]/100).to_list()
+    bzs = (df[col_name]/100).to_list()
 
     bzspd = pd.DataFrame(
         index=time,

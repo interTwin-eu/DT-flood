@@ -84,16 +84,16 @@ class CompareSfincsGFM(Method):
         fig, ax = plt.subplots(figsize=(3,3))
 
         r1 = Rectangle((0,0), 1, 1, edgecolor="black", facecolor="limegreen", fill=True, lw=0.5)
-        t1 = plt.text(0.5, 0.5, f"{np.round(count_no_flood_match/total_count*100, decimals=1)}",
+        _ = plt.text(0.5, 0.5, f"{np.round(count_no_flood_match/total_count*100, decimals=1)}",
                       size=16, ha="center", va="center")
         r2 = Rectangle((1,0), 1, 1, edgecolor="black", facecolor="coral", fill=True, lw=0.5)
-        t2 = plt.text(1.5, 0.5, f"{np.round(count_gfm_only/total_count*100, decimals=1)}",
+        _ = plt.text(1.5, 0.5, f"{np.round(count_gfm_only/total_count*100, decimals=1)}",
                       size=16, ha="center", va="center")
         r3 = Rectangle((0,1), 1, 1, edgecolor="black", facecolor="coral", fill=True, lw=0.5)
-        t3 = plt.text(0.5, 1.5, f"{np.round(count_sf_only/total_count*100, decimals=1)}",
+        _ = plt.text(0.5, 1.5, f"{np.round(count_sf_only/total_count*100, decimals=1)}",
                       size=16, ha="center", va="center")
         r4 = Rectangle((1,1), 1, 1, edgecolor="black", facecolor="limegreen", fill=True, lw=0.5)
-        t4 = plt.text(1.5, 1.5, f"{np.round(count_flooded_match/total_count*100)}",
+        _ = plt.text(1.5, 1.5, f"{np.round(count_flooded_match/total_count*100)}",
                       size=16, ha="center", va="center")
 
         ax.add_patch(r1)

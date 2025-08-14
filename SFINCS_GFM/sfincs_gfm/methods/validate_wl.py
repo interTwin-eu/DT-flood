@@ -8,7 +8,9 @@ from hydromt_sfincs import SfincsModel
 
 from hydroflows.workflow.method_parameters import Parameters
 from hydroflows.workflow.method import Method
-from hydroflows._typing import FileDirPath, ListOfPath, OutputDirPath
+from hydroflows._typing import FileDirPath, ListOfPath, OutputDirPath, ListOfStr
+
+from sfincs_gfm.methods.utils import parse_local_wl_data
 
 class Input(Parameters):
 
@@ -27,6 +29,8 @@ class Params(Parameters):
     plot_name: str = "sfincs_wl_validation.png"
 
     wl_offset: float = 0.0
+
+    column_names: ListOfStr = None
 
 class ValidateWL(Method):
 
@@ -61,23 +65,22 @@ class ValidateWL(Method):
 
         wl_list = self.input.wl_data
         wl_offset = self.params.wl_offset
-        wl_df = []
 
         df = pd.DataFrame(index=sf.results["point_zs"].time.values)
         if len(sf.results['point_zs'].stations)>0:
             for ii in np.arange(len(sf.results["point_zs"].stations)):
                 df[ii] = sf.results["point_zs"].isel(stations=ii).values
 
-        for ii, fn in enumerate(wl_list):
-            wl_df.append(pd.read_csv(fn, header=0, delimiter=";"))
-            wl_df[ii]["timestamp"] = pd.to_datetime(wl_df[ii]["timestamp"])
-            wl_df[ii] = wl_df[ii].set_index("timestamp")
-            if ii>=1:
-                wl_df[0] = wl_df[0].join(wl_df[ii],rsuffix=str(ii))
+        for ii, fn in enumerate(sorted(wl_list)):
+            df_tmp = parse_local_wl_data(fn, col_name="value")
+            if ii==0:
+                obs_df = df_tmp
+            else:
+                obs_df = obs_df.join(df_tmp, rsuffix=str(ii))
         
-        obs_df = (wl_df[0] + wl_offset)/100
-        obs_df = obs_df.rename(columns={"value": "Althagen", "value1": "Barhoeft", "value2": "Barth"})
-        obs_df = obs_df[obs_df.index.day>16]
+        obs_df = obs_df + wl_offset
+        if self.params.column_names:
+            obs_df.columns = self.params.column_names
 
         r2 = {}
         lab = []
@@ -107,5 +110,5 @@ class ValidateWL(Method):
         ax.set_ylabel("Waterlevel [m above NHN]")
         ax.set_xlim(left=obs_df.index[0], right=df.index[-1])
 
-        plt.close()
         plt.savefig(self.output.validation_plot)
+        plt.close()

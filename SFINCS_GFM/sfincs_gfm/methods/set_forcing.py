@@ -75,6 +75,7 @@ class SetForcing(Method):
 
         root = self.input.sfincs_inp.parent
         out_root = self.output.sfincs_out_inp.parent
+        wl_offset = self.params.wl_offset
         copy_model = self.params.copy_model
 
         fmt = "%Y%m%d %H%M%S"
@@ -82,7 +83,7 @@ class SetForcing(Method):
         if copy_model:
             copy_sfincs_model(src=root, dest=out_root)
 
-        bzspd = parse_local_wl_data(self.input.wl_file)
+        bzspd = parse_local_wl_data(self.input.wl_file, col_name=1)
         wnd = fetch_local_wind_data(self.params.wind_url)
 
         sf = SfincsModel(root=root, mode="r", write_gis=False)
@@ -95,7 +96,7 @@ class SetForcing(Method):
             }
         )
 
-        sf.setup_waterlevel_forcing(timeseries=bzspd, merge=False)
+        sf.setup_waterlevel_forcing(timeseries=bzspd+wl_offset, merge=False)
         sf.setup_wind_forcing(timeseries=wnd)
 
         sf.set_root(out_root, mode="w+")
