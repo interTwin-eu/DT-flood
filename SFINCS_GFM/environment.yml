@@ -1,0 +1,22 @@
+name: sfincs_gfm
+channels:
+  - conda-forge
+
+dependencies:
+  - geoviews
+  - hvplot
+  - hydromt_sfincs
+  - ipykernel
+  - graphviz
+  - jupyter_bokeh
+  - libgdal-hdf5
+  - dask=2025.2.0
+  - python=3.11.*
+  - traitlets=5.14.3
+  - pip
+  - pip:
+    - dask-flood-mapper[all]
+    - git+https://github.com/Deltares-research/HydroFlows
+    - oscar-python
+    - rucio-clients
+    - -e .
