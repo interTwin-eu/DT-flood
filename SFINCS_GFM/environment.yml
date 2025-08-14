@@ -18,4 +18,5 @@ dependencies:
     - dask-flood-mapper[all]
     - git+https://github.com/Deltares-research/HydroFlows
     - oscar-python
+    - rucio-clients
     - -e .

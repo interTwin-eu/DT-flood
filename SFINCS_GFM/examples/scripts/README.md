@@ -1,0 +1,1 @@
+This directory contains the scripts used as starting point for the sfincs-gfm integration steps. All of their logic has been converted to workflow steps, and the script do not need to be used for running the use-case.
