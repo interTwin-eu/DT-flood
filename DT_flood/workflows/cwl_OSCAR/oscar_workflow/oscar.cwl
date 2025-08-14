@@ -21,7 +21,7 @@ inputs:
     type: Directory
   output:
     type: Directory
-  
+
 outputs:
   fa_database_out:
     type: Directory?

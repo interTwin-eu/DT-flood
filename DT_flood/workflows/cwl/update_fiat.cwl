@@ -1,33 +1,47 @@
 cwlVersion: v1.2
 class: CommandLineTool
 
-baseCommand: ["python"]
-
 requirements:
-    InlineJavascriptRequirement: {}
     InitialWorkDirRequirement:
-        listing:    
-            - $(inputs.pyscript)
-            - $(inputs.fa_database)
+        listing:
+            - $(inputs.input_folder)
+            - $(inputs.static_folder)
+            - $(inputs.output_folder)
+
+baseCommand: ["python"]
 
 inputs:
     pyscript:
         type: File
         inputBinding:
-            position: 1
-    fa_database:
+            position: -1
+    input_folder:
         type: Directory
         inputBinding:
-            position: 2
+            prefix: "--input"
+    static_folder:
+        type: Directory
+        inputBinding:
+            prefix: "--static"
+    output_folder:
+        type: Directory
+        inputBinding:
+            prefix: "--output"
     scenario:
         type: string
         inputBinding:
-            position: 3
-
-
+            prefix: "--scenario"
+    floodmap:
+        type: File
+        inputBinding:
+            prefix: "--floodmap"
+    waterlevel_map:
+        type: File
+        inputBinding:
+            prefix: "--waterlevelmap"
 
 outputs:
-    fa_database_out:
+    fiat_dir:
         type: Directory
         outputBinding:
-            glob: "$(inputs.fa_database.basename)"
+            glob: "$(inputs.output_folder.basename)/scenarios/$(inputs.scenario)/Impacts/fiat_model"

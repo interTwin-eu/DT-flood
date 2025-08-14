@@ -1,8 +1,8 @@
 oscar_script:
   class: File
   path: oscar_workflow/oscar.py
-endpoint: 
-token: 
+endpoint:
+token:
 service_wflow: wflow
 service_sfincs: sfincs
 filename_wflow:

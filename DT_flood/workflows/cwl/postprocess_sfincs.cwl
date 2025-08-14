@@ -1,33 +1,42 @@
 cwlVersion: v1.2
 class: CommandLineTool
 
-baseCommand: ["python"]
-
 requirements:
-    InlineJavascriptRequirement: {}
     InitialWorkDirRequirement:
-        listing:    
-            - $(inputs.pyscript)
-            - $(inputs.fa_database)
+        listing:
+            - $(inputs.input_folder)
+            - $(inputs.static_folder)
+
+baseCommand: ["python"]
 
 inputs:
     pyscript:
         type: File
         inputBinding:
-            position: 1
-    fa_database:
+            position: -1
+    input_folder:
         type: Directory
         inputBinding:
-            position: 2
+            prefix: "--input"
+    static_folder:
+        type: Directory
+        inputBinding:
+            prefix: "--static"
     scenario:
         type: string
         inputBinding:
-            position: 3
-
-
+            prefix: "--scenario"
+    sfincs_dir:
+        type: Directory
+        inputBinding:
+            prefix: "--sfincsdir"
 
 outputs:
-    fa_database_out:
-        type: Directory
+    floodmap:
+        type: File
         outputBinding:
-            glob: "$(inputs.fa_database.basename)"
+            glob: "FloodMap_$(inputs.scenario).tif"
+    waterlevel_map:
+        type: File
+        outputBinding:
+            glob: "max_water_level_map.nc"

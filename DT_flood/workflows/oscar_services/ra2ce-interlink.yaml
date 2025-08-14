@@ -1,0 +1,21 @@
+functions:
+  oscar:
+  - cluster-id:
+      name: ra2ce-interlink
+      cpu: '4.0'
+      memory: 16Gi
+      image: docker://containers.deltares.nl/gfs/ra2ce:v1_0_0
+      script: ra2ce-interlink_script.sh
+      log_level: DEBUG   # To avoid supervisor logs in response
+      interlink_node_name: vega-new-vk
+      annotations:
+        slurm-job.vk.io/singularity-options: --no-home --no-mount /exa5
+        slurm-job.vk.io/singularity-mounts:  --bind /ceph/hpc/home/ciangottinid/oscar_home:/tmp
+        job.vk.io/singularity-mounts: --bind /ceph/hpc/data/st2301-itwin-users/:/interlink/
+        slurm-job.vk.io/flags: -p gpu --gres=gpu:1 --ntasks-per-node=1 --job-name=ra2ce-interlink --nodes=1 --time=00:10:00
+      input:
+      - storage_provider: minio
+        path: ra2ceinterlink/in
+      output:
+      - storage_provider: minio
+        path: ra2ceinterlink/out

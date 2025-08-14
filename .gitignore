@@ -1,16 +1,8 @@
-# *
-# !running_the_notebooks/
-# !Notebooks/ConfigureFullScenario.ipynb
-# !Notebooks/SetupFIAT.ipynb
-# !Notebooks/SetupSFINCS.ipynb
-# !Notebooks/SetupSite.ipynb
-# !Notebooks/SetupWFlow.ipynb
-# !Notebooks/VisualizeScenario.ipynb
 cache/
 tmp/
 
 __pycache__/
-*.py[cod]
+**/*.py[cod]
 
 .vscode/
 .pixi/
@@ -18,3 +10,6 @@ __pycache__/
 **/cache
 
 Demonstrator/
+**/old
+
+linter.log

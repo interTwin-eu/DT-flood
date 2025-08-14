@@ -1,41 +1,49 @@
 cwlVersion: v1.2
 class: CommandLineTool
 
-baseCommand: ["python"]
-
 requirements:
-    InlineJavascriptRequirement: {}
     InitialWorkDirRequirement:
-        listing:    
+        listing:
             - entry: $(inputs.pyscript)
-            - entry: $(inputs.fa_database)
-              writable: true
+            - entry: $(inputs.input_folder)
+            - entry: $(inputs.static_folder)
             - entry: $(inputs.utils_script_docker)
+
+
+baseCommand: ["python"]
 
 hints:
     DockerRequirement:
-        dockerPull: containers.deltares.nl/ra2ce/ra2ce:latest
+        dockerPull: containers.deltares.nl/gfs/ra2ce:v1_0_0
 
 inputs:
     pyscript:
         type: File
         inputBinding:
-            position: 1
-    fa_database:
+            position: -1
+    input_folder:
         type: Directory
         inputBinding:
-            position: 2
+            prefix: "--input"
+    static_folder:
+        type: Directory
+        inputBinding:
+            prefix: "--static"
+    output_folder:
+        type: Directory
     scenario:
         type: string
         inputBinding:
-            position: 3
+            prefix: "--scenario"
+    floodmap:
+        type: File
+        inputBinding:
+            prefix: "--floodmap"
     utils_script_docker:
         type: File
 
-
-
 outputs:
-    fa_database_out:
+    ra2ce_dir:
         type: Directory
         outputBinding:
-            glob: "$(inputs.fa_database.basename)"
+            glob: "$(inputs.output_folder.basename)/scenarios/$(inputs.scenario)/Impacts/ra2ce"

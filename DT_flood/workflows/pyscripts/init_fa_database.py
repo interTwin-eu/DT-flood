@@ -1,30 +1,33 @@
-from pathlib import Path
-from sys import argv
+"""Script for initializing FloodAdapt scenario."""
+
+import argparse
 from os import makedirs
-from shutil import copytree, rmtree
+from pathlib import Path
+from shutil import rmtree
 
-from DT_flood.utils.fa_scenario_utils import init_scenario, create_scenario
-from flood_adapt.api import scenarios
-from flood_adapt.object_model.utils import write_finished_file
+from flood_adapt.misc.utils import write_finished_file
 
-print("Make extra copies of input folders")
-copytree(Path(argv[1])/'input'/"projections", Path(argv[1])/'input'/"Projections", dirs_exist_ok=True)
-copytree(Path(argv[1])/"input"/"strategies", Path(argv[1])/"input"/"Strategies", dirs_exist_ok=True)
+from DT_flood.utils.fa_scenario_utils import init_scenario
 
-database, scenario = init_scenario(Path(argv[1]), (argv[2]+"_toplevel.toml"))
+parser = argparse.ArgumentParser()
+parser.add_argument("--input")
+parser.add_argument("--static")
+parser.add_argument("--scenario")
 
-new_scenario = database.scenarios.get(scenario['name'])
-new_scenario = create_scenario(database, scenario)
+args = parser.parse_args()
 
-# return_code = scenarios.save_scenario(new_scenario)
-# print(return_code)
-# new_scenario.init_object_model()
+scenario = args.scenario
+database_root = Path(args.input).parent
 
-if new_scenario.results_path.exists():
+database, scenario = init_scenario(database_root, scenario)
+
+results_path = database.database.scenarios.output_path.joinpath(scenario.name)
+
+if results_path.exists():
     print("Removing existing output folder")
-    rmtree(new_scenario.results_path)
+    rmtree(results_path)
 
-print(f"Creating output folder at {new_scenario.results_path}")
-makedirs(new_scenario.results_path)
+print(f"Creating output folder at {results_path}")
+makedirs(results_path)
 
-write_finished_file(new_scenario.results_path)
+write_finished_file(results_path)

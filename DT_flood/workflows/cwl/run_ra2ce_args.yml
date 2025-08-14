@@ -1,7 +1,0 @@
-pyscript:
-  class: File
-  path: "../pyscripts/run_ra2ce.py"
-fa_database:
-  class: Directory
-  path: "/home/wotromp/InterTwin/FloodAdapt_database/Humber"
-scenario: "Empty_Event_current_no_measures"

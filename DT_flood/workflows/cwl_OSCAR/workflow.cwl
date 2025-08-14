@@ -35,7 +35,7 @@ outputs:
     type:
       type: array
       items: [File, Directory, string]
-      
+
 steps:
   wflow:
     run: oscar_workflow/oscar.cwl
@@ -49,7 +49,7 @@ steps:
       output: output
     out: [fa_database_out]
   sfincs:
-    run: oscar_workflow/oscar.cwl  
+    run: oscar_workflow/oscar.cwl
     in:
       oscar_script: oscar_script
       endpoint: endpoint

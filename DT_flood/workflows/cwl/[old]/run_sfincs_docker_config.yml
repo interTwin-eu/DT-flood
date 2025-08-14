@@ -1,3 +1,0 @@
-sfincs_folder:
-  class: Directory
-  path: "../../FloodAdapt_database/Humber/output/Scenarios/Empty_Event_current_no_measures/Flooding/simulations/overland"
