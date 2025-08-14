@@ -8,9 +8,12 @@ inputs:
     script_setup_fiat: File
     script_setup_ra2ce: File
     script_build_ra2ce: File
+    script_setup_database: File
     script_oscar: File
     sf_res: float
     sf_subgrid_pixels: int
+    database_name: string
+    database_path: string
     endpoint: string
     refreshtoken: string
     service_ra2ce: string
@@ -18,15 +21,9 @@ inputs:
     oscar_output: string
 
 outputs:
-    oscar_out:
+    fa_database:
         type: Directory
-        outputSource: build_ra2ce/oscar_out
-    sfincs_dir:
-        type: Directory
-        outputSource: setup_sfincs/sfincs_dir
-    fiat_dir:
-        type: Directory
-        outputSource: setup_fiat/fiat_dir
+        outputSource: setup_database/fa_database
 
 steps:
     setup_sfincs:
@@ -74,3 +71,15 @@ steps:
         out:
             [oscar_out]
         run: ./cwl/oscar.cwl
+    setup_database:
+        in:
+            pyscript: script_setup_database
+            name: database_name
+            database_path: database_path
+            sfincs_root: setup_sfincs/sfincs_dir
+            fiat_root: setup_fiat/fiat_dir
+            wflow_root: setup_wflow/wflow_dir
+            ra2ce_root: build_ra2ce/oscar_out
+        out:
+            [fa_database]
+        run: ./cwl/setup_database.cwl

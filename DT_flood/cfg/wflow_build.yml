@@ -7,6 +7,7 @@ setup_basemaps:
   res: 0.00833
   region:
     basin: <region>
+    uparea: 10
     outlets: True
 
 setup_rivers:
@@ -16,14 +17,14 @@ setup_rivers:
   rivdph_method: powlaw
   min_rivdph: 1
   min_rivwth: 30
-  slope_len: 2000
-  smooth_len: 5000
-  river_routing: local-intertial
+  # slope_len: 2000
+  # smooth_len: 5000
+  # river_routing: local-inertial
 
-setup_floodplains:
-  hydrography_fn: data/hydrography.nc
-  floodplain_type: 1d
-  flood_depths: [0.5, 1,0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0]
+# setup_floodplains:
+#   hydrography_fn: data/hydrography.nc
+#   floodplain_type: 1d
+#   flood_depths: [0.5, 1,0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0]
 
 setup_reservoirs:
   reservoirs_fn: data/reservoirs.gpkg

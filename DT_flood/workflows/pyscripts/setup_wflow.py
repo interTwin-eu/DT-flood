@@ -70,6 +70,10 @@ outlist = download_tiled_data(dataset=hydro_scope, bbox=region_full.total_bounds
 ds_full = xr.open_mfdataset(outlist, preprocess=_set_spatial_ref)
 # ds_full.raster.to_mapstack(root="data/hydrography")
 ds_full["flwdir"] = ds_full.flwdir.astype(np.uint8)
+ds_full["basins"] = ds_full.flwdir.astype(np.uint32)
+ds_full["basins"].raster.set_nodata(0)
+ds_full["basins"] = ds_full.flwdir.astype(np.uint8)
+ds_full["basins"].raster.set_nodata(255)
 ds_full.to_netcdf(datafolder / "hydrography.nc")
 del ds_full
 index_fn = download_single(filename=f"{hydro_scope}_index.gpkg", rucio_scope="wtromp")
@@ -134,5 +138,6 @@ wf = WflowModel(
     # data_libs=["catalog.yml"]
 )
 wf.data_catalog.get_geodataframe(datafolder / "hydrography_index.gpkg")
+wf.build(region={"basin": region, "outlets": True}, opt=opt)
 wf.build(opt=opt)
 configwrite(wf_root / "wflow_build.yml", opt)
