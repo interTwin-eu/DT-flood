@@ -12,10 +12,6 @@ inputs:
         type: string
         inputBinding:
             prefix: "--name"
-    database_path:
-        type: string
-        inputBinding:
-            prefix: "--databasepath"
     sfincs_root:
         type: Directory
         inputBinding:
@@ -38,4 +34,4 @@ outputs:
     fa_database:
         type: Directory
         outputBinding:
-            glob: "$(inputs.database_path)/$(inputs.name)"
+            glob: "$(inputs.name)"

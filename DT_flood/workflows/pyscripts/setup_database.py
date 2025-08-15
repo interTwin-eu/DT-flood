@@ -15,7 +15,6 @@ from DT_flood.utils.fa_scenario_utils import create_systems_folder, folder_struc
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--name")
-parser.add_argument("--databasepath")
 parser.add_argument("--sfincsroot")
 parser.add_argument("--wflowroot")
 parser.add_argument("--fiatroot")
@@ -24,9 +23,7 @@ parser.add_argument("--ra2ceroot")
 args = vars(parser.parse_args())
 
 name = args["name"]
-root = Path(args["databasepath"])
-if not root.is_absolute():
-    root = (Path.cwd() / root).resolve()
+root = Path.cwd()
 sf_root = Path(args["sfincsroot"])
 fiat_root = Path(args["fiatroot"])
 wf_root = Path(args["wflowroot"])
@@ -43,9 +40,6 @@ config["sfincs_overland"]["name"] = sf_root.as_posix()
 config["building_footprints"]["file"] = (
     fiat_root / "exposure" / "buildings.gpkg"
 ).as_posix()
-
-if not root.is_absolute():
-    root = (Path.cwd() / root).resolve()
 
 (root / name).mkdir(parents=True)
 folder_structure(root / name)

@@ -13,7 +13,6 @@ inputs:
     sf_res: float
     sf_subgrid_pixels: int
     database_name: string
-    database_path: string
     endpoint: string
     refreshtoken: string
     service_ra2ce: string
@@ -75,7 +74,6 @@ steps:
         in:
             pyscript: script_setup_database
             name: database_name
-            database_path: database_path
             sfincs_root: setup_sfincs/sfincs_dir
             fiat_root: setup_fiat/fiat_dir
             wflow_root: setup_wflow/wflow_dir
