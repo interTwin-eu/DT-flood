@@ -62,24 +62,8 @@ def _handle_click(geometry, agg_area_name, **kwargs):
     return geometry
 
 
-def create_base_map(database):
+def create_base_map():
     """Create base map layer in database region."""
-    [center] = database.get_model_boundary().dissolve().centroid.to_crs(4326)
-    center = [center.y, center.x]
-
-    layout = Layout(height="1200px")
-
-    m = leafmap.Map(center=center, zoom=10, scroll_wheel_zoom=True, layout=layout)
-
-    for control in m.controls:
-        if isinstance(control, DrawControl):
-            m.remove(control)
-
-    return m
-
-
-def draw_database_map(database, agg_area_name=None, **kwargs):
-    """Draw interactive map at database location."""
     selected_geometry = []
 
     def handle_draw(target, action, geo_json):
@@ -87,13 +71,40 @@ def draw_database_map(database, agg_area_name=None, **kwargs):
             target=target, action=action, geo_json=geo_json, geometry=selected_geometry
         )
 
+    layout = Layout(height="1200px")
+
+    m = leafmap.Map(zoom=10, scroll_wheel_zoom=True, layout=layout)
+
+    for control in m.controls:
+        if isinstance(control, DrawControl):
+            m.remove(control)
+
+    draw_control = GeomanDrawControl()
+    draw_control.on_draw(handle_draw)
+    m.add(draw_control)
+
+    return m, selected_geometry
+
+
+def draw_database_map(database, agg_area_name=None, **kwargs):
+    """Draw interactive map at database location."""
+    selected_geometry = []
+
+    # [center] = database.get_model_boundary().dissolve().centroid.to_crs(4326)
+    # center = [center.y, center.x]
+
+    bounds = database.get_model_boundary().dissolve().to_crs(4326).total_bounds
+    bounds = [[bounds[1], bounds[0]], [bounds[3], bounds[2]]]
+
     def handle_click(**kwargs):
         _handle_click(geometry=selected_geometry, agg_area_name=agg_area_name, **kwargs)
 
     if agg_area_name is not None:
         agg_area = database.get_aggregation_areas()[agg_area_name]
 
-    m = create_base_map(database=database)
+    m, selected_geometry = create_base_map()
+
+    m.fit_bounds(bounds)
 
     geodata = GeoData(
         geo_dataframe=get_model_bounds(database),
@@ -113,10 +124,6 @@ def draw_database_map(database, agg_area_name=None, **kwargs):
     m.add(agg_area_layer)
 
     m.add(LayersControl())
-
-    draw_control = GeomanDrawControl()
-    draw_control.on_draw(handle_draw)
-    m.add(draw_control)
 
     legend = LegendControl({"SFINCS boundary": "black"}, title="Legend")
     if agg_area_name:

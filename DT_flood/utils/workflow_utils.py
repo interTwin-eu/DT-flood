@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 from typing import Union
 
+import geojson
 import yaml
 from flood_adapt.dbs_classes.interface.database import IDatabase
 
@@ -147,7 +148,7 @@ def create_workflow_config(
 
 def create_setup_workflow_config(
     database_path: Union[str, os.PathLike],
-    region_file: Union[str, os.PathLike],
+    region: Union[str, os.PathLike, list[dict]],
     oscar_endpoint: str,
     oscar_token: str,
     cwl_workflow: Union[str, os.PathLike] = WORFKFLOW_DIR / "setup_fa_database.cwl",
@@ -188,6 +189,19 @@ def create_setup_workflow_config(
     database_name = database_path.name
 
     database_root.mkdir(parents=True, exist_ok=True)
+
+    if isinstance(region, list):
+        try:
+            [geom] = region
+        except ValueError:
+            raise ValueError(
+                "region not a singleton list, please provide only one geometry."
+            )
+        region_file = database_root / f"region_selection_{database_name}.geojson"
+        with open(region_file, "w") as f:
+            geojson.dump(geom, f)
+    else:
+        region_file = region
 
     config_fn = database_root / "cwl_config_setup_database.yml"
     print(f"Saving cwl config to {str(config_fn)}")
