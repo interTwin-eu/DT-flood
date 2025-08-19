@@ -22,7 +22,11 @@ logger = setuplog("update_sfincs", log_level=10)
 # Unpack args
 scenario_name = args.scenario
 database_root = Path(args.input).parent
-wflow_dir = Path(args.wflowdir)
+contents_dir = list(Path(args.wflowdir).glob("*"))
+if any(["tmp" in file.name for file in contents_dir]):
+    wflow_dir = Path(args.wflowdir) / "tmp" / "model"
+else:
+    wflow_dir = Path(args.warmupdir) / "model"
 
 # unpack FA database, scenario, event description
 database, scenario = init_scenario(database_root, scenario_name)
@@ -76,7 +80,7 @@ config = inp.to_dict()
 reftime = config["tref"]
 
 print("Create discharge file")
-wf_out = wflow_dir / "model" / "run_default" / "output_scalar.nc"
+wf_out = wflow_dir / "run_default" / "output_scalar.nc"
 ds = xr.open_dataset(wf_out)
 
 # Wflow output only starts after first time step so t=0 discharge is missing.

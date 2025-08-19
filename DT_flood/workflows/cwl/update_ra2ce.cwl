@@ -12,9 +12,9 @@ requirements:
 
 baseCommand: ["python"]
 
-hints:
-    DockerRequirement:
-        dockerPull: containers.deltares.nl/gfs/ra2ce:v1_0_0
+# hints:
+#     DockerRequirement:
+#         dockerPull: containers.deltares.nl/gfs/ra2ce:v1_0_0
 
 inputs:
     pyscript:

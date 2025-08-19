@@ -137,9 +137,10 @@ def create_workflow_config(
     cwl_config["service_sfincs"] = (
         quoted("sfincs-interlink") if interlink_offload else quoted("sfincs")
     )
-    cwl_config["service_ra2ce"] = (
-        quoted("ra2ce-interlink") if interlink_offload else quoted("ra2ce")
-    )
+    cwl_config["service_ra2ce"] = quoted("ra2ce")
+    # cwl_config["service_ra2ce"] = (
+    #     quoted("ra2ce-interlink") if interlink_offload else quoted("ra2ce")
+    # )
 
     print(f"Write Config file {config_fn} to folder {config_fn}")
     with open(config_fn, "w+") as f:

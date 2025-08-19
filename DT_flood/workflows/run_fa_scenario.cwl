@@ -17,6 +17,7 @@ inputs:
     script_run_fiat: File
     script_postprocess_fiat: File
     script_update_ra2ce: File
+    script_run_ra2ce: File
     script_construct_output: File
     script_utils_ra2ce_docker: File
     script_oscar: File
@@ -181,6 +182,7 @@ steps:
             service: service_ra2ce
             service_directory: service_directory
             output: oscar_output
+            runscript: script_run_ra2ce
         out:
             [oscar_out]
         run:

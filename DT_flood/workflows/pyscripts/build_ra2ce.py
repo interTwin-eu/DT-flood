@@ -1,4 +1,4 @@
-"""RA2CE utility functions inside container."""
+"""Script to build ra2ce model, run inside docker."""
 
 import configparser
 from pathlib import Path
