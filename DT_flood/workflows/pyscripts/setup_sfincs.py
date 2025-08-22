@@ -89,6 +89,10 @@ del gebco
 outlist = download_tiled_data(dataset=river_scope, bbox=gdf.total_bounds)
 ds_full = xr.open_mfdataset(outlist, preprocess=_set_spatial_ref)
 ds_full["flwdir"] = ds_full.flwdir.astype(np.uint8)
+if ds_full[ds_full.raster.y_dim][0] < ds_full[ds_full.raster.y_dim][-1]:
+    ds_full = ds_full.reindex(
+        {ds_full.raster.y_dim: ds_full[ds_full.raster.y_dim][::-1]}
+    )
 ds_full.to_netcdf(datafolder / "hydrography.nc")
 del ds_full
 index_fn = download_single(filename=f"{river_scope}_index.gpkg", rucio_scope="wtromp")
@@ -107,7 +111,7 @@ globcover.rename({"GLOBCOVER_L4_200901_200912_V2": "lulc"}).to_netcdf(
     datafolder / "lulc.nc"
 )
 
-[globcover_mapping] = [file for file in globcover_fn if "mapping" in file.name]
+[globcover_mapping] = [file for file in globcover_fn if "mapping.csv" in file.name]
 globcover_mapping.rename(datafolder / "lulc_mapping.csv")
 
 # Clean up rucio downloads

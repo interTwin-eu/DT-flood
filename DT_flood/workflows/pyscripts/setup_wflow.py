@@ -70,10 +70,13 @@ outlist = download_tiled_data(dataset=hydro_scope, bbox=region_full.total_bounds
 ds_full = xr.open_mfdataset(outlist, preprocess=_set_spatial_ref)
 # ds_full.raster.to_mapstack(root="data/hydrography")
 ds_full["flwdir"] = ds_full.flwdir.astype(np.uint8)
-ds_full["basins"] = ds_full.flwdir.astype(np.uint32)
+ds_full["basins"] = ds_full.basins.astype(np.uint32)
 ds_full["basins"].raster.set_nodata(0)
-ds_full["basins"] = ds_full.flwdir.astype(np.uint8)
-ds_full["basins"].raster.set_nodata(255)
+
+if ds_full[ds_full.raster.y_dim][0] < ds_full[ds_full.raster.y_dim][-1]:
+    ds_full = ds_full.reindex(
+        {ds_full.raster.y_dim: ds_full[ds_full.raster.y_dim][::-1]}
+    )
 ds_full.to_netcdf(datafolder / "hydrography.nc")
 del ds_full
 index_fn = download_single(filename=f"{hydro_scope}_index.gpkg", rucio_scope="wtromp")
@@ -102,6 +105,11 @@ globcover = xr.open_mfdataset(globcover_ncs)
 globcover.rename({"GLOBCOVER_L4_200901_200912_V2": "lulc"}).to_netcdf(
     datafolder / "lulc.nc"
 )
+globcover.rename({"GLOBCOVER_L4_200901_200912_V2": "landuse"}).to_netcdf(
+    datafolder / "lulc.nc"
+)
+[globcover_mapping] = [file for file in globcover_fn if "mapping_wflow" in file.name]
+globcover_mapping.rename(datafolder / "lulc_mapping.csv")
 
 # Get LAI data
 lai_fns = download_dataset(dataset=lai_scope)
@@ -122,22 +130,27 @@ rmtree(Path.cwd() / "wtromp")
 
 logger = setuplog("wflow_build", log_level=10)
 
-# dc = DataCatalog(data_libs=[catalog_fn])
-# dc.to_yml("catalog.yml")
-
 opt = configread(wf_config)
-
-# opt["setup_basemaps"].update(region={"basin": datafolder/"basins.gpkg"})
-opt["setup_basemaps"].update(region={"basin": region})
+opt["setup_basemaps"].update(region={"subbasin": region})
 opt["setup_gauges"].update(gauges_fn=gauges_fn)
 
 wf = WflowModel(
     root=wf_root,
     mode="w+",
     logger=logger,
-    # data_libs=["catalog.yml"]
 )
 wf.data_catalog.get_geodataframe(datafolder / "hydrography_index.gpkg")
-wf.build(region={"basin": region, "outlets": True}, opt=opt)
 wf.build(opt=opt)
+# Make sure nodata values set correctly
+wf.grid["Slope"] = wf.grid["Slope"].raster.mask_nodata(-9999.0)
+wf.grid["wflow_dem"] = wf.grid["wflow_dem"].raster.mask_nodata(-9999.0)
+# Make sure all active cells have values in them (can be problem along coastline)
+for var in ["Slope", "wflow_dem"]:
+    wf.grid[var] = (
+        wf.grid[var]
+        .raster.interpolate_na()
+        .where(wf.grid["wflow_subcatch"] > 0, wf.grid[var].attrs["_FillValue"])
+    )
+wf.write()
+
 configwrite(wf_root / "wflow_build.yml", opt)
