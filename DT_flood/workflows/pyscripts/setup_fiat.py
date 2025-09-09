@@ -5,6 +5,8 @@ from pathlib import Path
 from shutil import rmtree
 
 import geopandas as gpd
+import tomli
+import tomli_w
 from hydromt.config import configread, configwrite
 from hydromt.log import setuplog
 from hydromt_fiat.fiat import FiatModel
@@ -48,4 +50,15 @@ ft = FiatModel(root=ft_root, mode="w+", logger=logger)
 
 ft.build(region={"geom": region}, opt=opt, write=True)
 ft.write()
+
+# Make sure naming of output is correct in toml settings
+with open(ft_root / "settings.toml", "rb") as f:
+    config = tomli.load(f)
+
+# fix mismatch between fiat, hydromt-fiat with this naming convention
+config["output"]["csv"] = {"name1": config["output"]["csv"]["name"]}
+
+with open(ft_root / "settings.toml", "wb") as f:
+    tomli_w.dump(config, f)
+
 configwrite(ft_root / "fiat_build.yml", opt)

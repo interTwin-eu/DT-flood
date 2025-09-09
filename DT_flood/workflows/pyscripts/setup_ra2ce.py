@@ -49,6 +49,7 @@ copy(args["regionfile"], ra2ce_root / "static" / "network" / "map.geojson")
 # Setup origin points
 print("Creating Origin points")
 agg = gpd.read_file(datafolder / agg_fn.name)
+agg = agg.clip(region)
 shapes = list(enumerate(agg["geometry"].values))
 shapes = [(t[1], t[0] + 1) for t in shapes]
 
@@ -73,10 +74,14 @@ zonal_out = zonal_stats(
 )
 zonal_out = zonal_out.drop(0)
 
+missing_inds = [
+    i for i in range(0, rasterized.max().values + 1) if not (rasterized == i).any()
+]
+agg = agg.drop(agg.index[missing_inds], axis=0)
+
 print("Export origin points")
-origins = gpd.GeoDataFrame(data=zonal_out, geometry=agg.geometry.centroid).dropna()
+origins = gpd.GeoDataFrame(data=zonal_out, geometry=agg.geometry.centroid.values)
 origins = origins.rename(columns={"sum": "POPULATION", "zone": "OBJECT ID"})
-origins = origins.clip(region)
 origins["category"] = "origin"
 origins.to_file(ra2ce_root / "static" / "network" / "origins.gpkg", driver="GPKG")
 
