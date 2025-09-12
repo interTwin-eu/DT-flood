@@ -16,6 +16,10 @@ inputs:
         type: string?
         inputBinding:
             prefix: "--popdata"
+    dest_points:
+        type: string?
+        inputBinding:
+            prefix: "--destpoints"
 outputs:
     ra2ce_dir:
         type: Directory

@@ -22,12 +22,14 @@ def _set_spatial_ref(ds):
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--regionfile")
+parser.add_argument("--destpoints", default="hospital")
 parser.add_argument("--popdata", default="worldpop")
 
 args = vars(parser.parse_args())
 
 ra2ce_root = Path.cwd() / "ra2ce"
 region = gpd.read_file(args["regionfile"])
+dest_points = args["destpoints"]
 pop_scope = args["popdata"]
 
 datafolder = Path.cwd() / "data"
@@ -88,7 +90,7 @@ origins.to_file(ra2ce_root / "static" / "network" / "origins.gpkg", driver="GPKG
 # Setup Destination points
 print("Setup Destination points")
 print("Download OSM features")
-feats = ox.features_from_polygon(region.geometry[0], tags={"amenity": ["hospital"]})
+feats = ox.features_from_polygon(region.geometry[0], tags={"amenity": [dest_points]})
 
 print("Export destination points")
 dest = feats.reset_index()[["osmid", "amenity", "geometry"]]

@@ -16,6 +16,10 @@ inputs:
         type: Directory
         inputBinding:
             prefix: "--sfincsroot"
+    res:
+        type: float?
+        inputBinding:
+            prefix: "--res"
     basin_data:
         type: string?
         inputBinding:

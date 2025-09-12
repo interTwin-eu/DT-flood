@@ -2,7 +2,7 @@ setup_basemaps:
   hydrography_fn: data/hydrography.nc
   basin_index_fn: hydrography_index.gpkg
   upscale_method: ihu
-  res: 0.00833
+  res: <res>
   region:
     subbasin: <region>
     uparea: 10

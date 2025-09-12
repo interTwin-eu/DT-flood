@@ -23,6 +23,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--regionfile")
 parser.add_argument("--sfincsroot")
+parser.add_argument("--res", default=0.00833, type=float)
 
 parser.add_argument("--basindata", default="basin_atlas_v10")
 parser.add_argument("--hydrodata", default="merit_hydro")
@@ -44,6 +45,7 @@ datafolder = Path.cwd() / "data"
 datafolder.mkdir(exist_ok=True)
 wf_config = CFG_DIR / "wflow_build.yml"
 catalog_fn = CFG_DIR / "catalog.yml"
+res = args["res"]
 
 basin_scope = args["basindata"]
 hydro_scope = args["hydrodata"]
@@ -132,6 +134,7 @@ logger = setuplog("wflow_build", log_level=10)
 
 opt = configread(wf_config)
 opt["setup_basemaps"].update(region={"subbasin": region})
+opt["setup_basemaps"].update(res=res)
 opt["setup_gauges"].update(gauges_fn=gauges_fn)
 
 wf = WflowModel(

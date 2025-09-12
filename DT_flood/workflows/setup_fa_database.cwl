@@ -10,8 +10,10 @@ inputs:
     script_build_ra2ce: File
     script_setup_database: File
     script_oscar: File
-    sf_res: float
-    sf_subgrid_pixels: int
+    sf_res: float?
+    sf_subgrid_pixels: int?
+    wf_res: float?
+    ra2ce_dest_points: string?
     database_name: string
     endpoint: string
     refreshtoken: string
@@ -39,6 +41,7 @@ steps:
             pyscript: script_setup_wflow
             region_file: region_file
             sfincs_root: setup_sfincs/sfincs_dir
+            res: wf_res
         out:
             [wflow_dir]
         run: ./cwl/setup_wflow.cwl
@@ -54,6 +57,7 @@ steps:
         in:
             pyscript:   script_setup_ra2ce
             region_file: region_file
+            dest_points: ra2ce_dest_points
         out:
             [ra2ce_dir]
         run: ./cwl/setup_ra2ce.cwl

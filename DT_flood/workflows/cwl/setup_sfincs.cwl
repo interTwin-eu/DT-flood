@@ -13,11 +13,11 @@ inputs:
         inputBinding:
             prefix: "--regionfile"
     res:
-        type: float
+        type: float?
         inputBinding:
             prefix: "--res"
     subgrid_pixels:
-        type: int
+        type: int?
         inputBinding:
             prefix: "--subgridpixels"
     basin_data:

@@ -154,6 +154,7 @@ def create_setup_workflow_config(
     oscar_token: str,
     cwl_workflow: Union[str, os.PathLike] = WORFKFLOW_DIR / "setup_fa_database.cwl",
     script_folder: Union[str, os.PathLike] = SCRIPT_DIR,
+    **kwargs,
 ):
     """Write config for setup database workflow.
 
@@ -208,8 +209,16 @@ def create_setup_workflow_config(
     print(f"Saving cwl config to {str(config_fn)}")
     print(f"Workflow file: {str(cwl_workflow)}")
     # Generate cwl template
-    cmd = f'cwltool --make-template "{cwl_workflow.as_posix()}" > "{config_fn.as_posix()}"'
-    subprocess.run(cmd, shell=True)
+    ps1 = subprocess.run(
+        ["cwltool", "--make-template", cwl_workflow.as_posix()], capture_output=True
+    )
+    ps2 = subprocess.run(
+        ["grep", "-v", "optional"], input=ps1.stdout, capture_output=True
+    )
+    with open(config_fn.as_posix(), "w") as f:
+        f.write(ps2.stdout.decode())
+    # cmd = f'cwltool --make-template "{cwl_workflow.as_posix()}" > "{config_fn.as_posix()}"'
+    # subprocess.run(cmd, shell=True)
 
     with open(config_fn, "r") as f:
         cwl_config = yaml.load(f, Loader=yaml.FullLoader)
@@ -220,14 +229,15 @@ def create_setup_workflow_config(
         cwl_config[input]["path"] = quoted(str(path))
 
     cwl_config["region_file"]["path"] = quoted(region_file)
-    cwl_config["sf_res"] = 100
-    cwl_config["sf_subgrid_pixels"] = 6
+    # cwl_config["sf_res"] = 100
+    # cwl_config["sf_subgrid_pixels"] = 6
     cwl_config["database_name"] = quoted(database_name)
     cwl_config["endpoint"] = quoted(oscar_endpoint)
     cwl_config["refreshtoken"] = quoted(oscar_token)
     cwl_config["oscar_output"] = quoted("output")
     cwl_config["service_ra2ce"] = quoted("ra2ce")
     cwl_config["service_directory"]["path"] = quoted(WORFKFLOW_DIR / "oscar_services")
+    cwl_config.update(kwargs)
 
     print(f"Write Config file {config_fn} to folder {config_fn.parent}")
     with open(config_fn, "w+") as f:

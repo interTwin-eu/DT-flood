@@ -23,8 +23,8 @@ parser = argparse.ArgumentParser()
 # parser.add_argument("--modeldir")
 parser.add_argument("--regionfile")
 
-parser.add_argument("--res", type=float)
-parser.add_argument("--subgridpixels", type=int)
+parser.add_argument("--res", type=float, default=100)
+parser.add_argument("--subgridpixels", type=int, default=6)
 
 parser.add_argument("--basindata", default="basin_atlas_v10")
 parser.add_argument("--topodata", default="fabdem")
