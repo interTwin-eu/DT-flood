@@ -2,9 +2,9 @@ functions:
   oscar:
   - cluster-id:
       name: sfincs-interlink
-      cpu: '4.0'
-      memory: 16Gi
-      image: docker://deltares/sfincs-cpu:sfincs-v2.1.1-Dollerup-Release
+      cpu: '36.0'
+      memory: 72Gi
+      image: docker://deltares/sfincs-cpu:sfincs-v2.2.0-col-dEze-Release
       script: sfincs-interlink_script.sh
       log_level: DEBUG   # To avoid supervisor logs in response
       interlink_node_name: vega-new-vk
@@ -12,7 +12,7 @@ functions:
         slurm-job.vk.io/singularity-options: --no-home --no-mount /exa5
         slurm-job.vk.io/singularity-mounts:  --bind /ceph/hpc/home/ciangottinid/oscar_home:/tmp
         job.vk.io/singularity-mounts: --bind /ceph/hpc/data/st2301-itwin-users/:/interlink/
-        slurm-job.vk.io/flags: --job-name=test-sfincs --time=02:30:00   --nodes=1
+        slurm-job.vk.io/flags: --job-name=test-sfincs --time=05:30:00   --nodes=1
       input:
       - storage_provider: minio
         path: sfincsinterlink/in

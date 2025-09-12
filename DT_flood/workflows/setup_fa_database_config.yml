@@ -1,0 +1,35 @@
+region_file:
+  class: File
+  path: /home/wotromp/InterTwin/workflow_refactor/model_setup/HumberDelta_large.geojson
+script_setup_sfincs:
+  class: File
+  path: ./pyscripts/setup_sfincs.py
+sf_res: 100
+sf_subgrid_pixels: 6
+script_setup_wflow:
+  class: File
+  path: ./pyscripts/setup_wflow.py
+script_setup_ra2ce:
+  class: File
+  path: ./pyscripts/setup_ra2ce.py
+script_build_ra2ce:
+  class: File
+  path: ./pyscripts/build_ra2ce.py
+script_setup_fiat:
+  class: File
+  path: ./pyscripts/setup_fiat.py
+script_setup_database:
+  class: File
+  path: ./pyscripts/setup_database.py
+database_name: "Humber_test"
+database_path: "fa_databases"
+script_oscar:
+  class: File
+  path: ./pyscripts/oscar.py
+endpoint: 'https://oscar-ukri.intertwin.fedcloud.eu'
+refreshtoken:
+service_ra2ce: ra2ce
+service_directory:
+  class: Directory
+  path: ./oscar_services/
+oscar_output: output

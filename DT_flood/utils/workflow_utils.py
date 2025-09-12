@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 from typing import Union
 
+import geojson
 import yaml
 from flood_adapt.dbs_classes.interface.database import IDatabase
 
@@ -136,11 +137,109 @@ def create_workflow_config(
     cwl_config["service_sfincs"] = (
         quoted("sfincs-interlink") if interlink_offload else quoted("sfincs")
     )
-    cwl_config["service_ra2ce"] = (
-        quoted("ra2ce-interlink") if interlink_offload else quoted("ra2ce")
-    )
+    cwl_config["service_ra2ce"] = quoted("ra2ce")
+    # cwl_config["service_ra2ce"] = (
+    #     quoted("ra2ce-interlink") if interlink_offload else quoted("ra2ce")
+    # )
 
     print(f"Write Config file {config_fn} to folder {config_fn}")
+    with open(config_fn, "w+") as f:
+        yaml.dump(cwl_config, f, default_flow_style=False, sort_keys=True)
+
+
+def create_setup_workflow_config(
+    database_path: Union[str, os.PathLike],
+    region: Union[str, os.PathLike, list[dict]],
+    oscar_endpoint: str,
+    oscar_token: str,
+    cwl_workflow: Union[str, os.PathLike] = WORFKFLOW_DIR / "setup_fa_database.cwl",
+    script_folder: Union[str, os.PathLike] = SCRIPT_DIR,
+    **kwargs,
+):
+    """Write config for setup database workflow.
+
+    Parameters
+    ----------
+    database_path : Union[str, os.PathLike]
+        Location of to-be-created workflow
+    region_file : Union[str, os.PathLike]
+        File defining RoI
+    oscar_endpoint : str
+        URL of Oscar endpoint
+    oscar_token : str
+        EGI-SSO refresh token for authentication
+    cwl_workflow : Union[str, os.PathLike], optional
+        Path to cwl workflow description, by default WORFKFLOW_DIR/"setup_fa_database.cwl"
+    script_folder : Union[str, os.PathLike], optional
+        Path to folder containing py script being called by workflows, by default SCRIPT_DIR
+    """
+    if not isinstance(cwl_workflow, Path):
+        cwl_workflow = Path(cwl_workflow)
+    if not cwl_workflow.exists():
+        raise ValueError(
+            f"Workflow file {cwl_workflow} does not exist! Please provide a valid path."
+        )
+
+    if not isinstance(script_folder, Path):
+        script_folder = Path(script_folder)
+    if not script_folder.exists():
+        raise ValueError(
+            f"Script folder {script_folder} does not exist! Please provide a valid path."
+        )
+
+    database_root = database_path.parent
+    database_name = database_path.name
+
+    database_root.mkdir(parents=True, exist_ok=True)
+
+    if isinstance(region, list):
+        try:
+            [geom] = region
+        except ValueError:
+            raise ValueError(
+                "region not a singleton list, please provide only one geometry."
+            )
+        region_file = database_root / f"region_selection_{database_name}.geojson"
+        with open(region_file, "w") as f:
+            geojson.dump(geom, f)
+    else:
+        region_file = region
+
+    config_fn = database_root / "cwl_config_setup_database.yml"
+    print(f"Saving cwl config to {str(config_fn)}")
+    print(f"Workflow file: {str(cwl_workflow)}")
+    # Generate cwl template
+    ps1 = subprocess.run(
+        ["cwltool", "--make-template", cwl_workflow.as_posix()], capture_output=True
+    )
+    ps2 = subprocess.run(
+        ["grep", "-v", "optional"], input=ps1.stdout, capture_output=True
+    )
+    with open(config_fn.as_posix(), "w") as f:
+        f.write(ps2.stdout.decode())
+    # cmd = f'cwltool --make-template "{cwl_workflow.as_posix()}" > "{config_fn.as_posix()}"'
+    # subprocess.run(cmd, shell=True)
+
+    with open(config_fn, "r") as f:
+        cwl_config = yaml.load(f, Loader=yaml.FullLoader)
+
+    script_inputs = [key for key in cwl_config if "script" in key]
+    for input in script_inputs:
+        path = list(script_folder.glob(f"{input.split('_', maxsplit=1)[1]}*"))[0]
+        cwl_config[input]["path"] = quoted(str(path))
+
+    cwl_config["region_file"]["path"] = quoted(region_file)
+    # cwl_config["sf_res"] = 100
+    # cwl_config["sf_subgrid_pixels"] = 6
+    cwl_config["database_name"] = quoted(database_name)
+    cwl_config["endpoint"] = quoted(oscar_endpoint)
+    cwl_config["refreshtoken"] = quoted(oscar_token)
+    cwl_config["oscar_output"] = quoted("output")
+    cwl_config["service_ra2ce"] = quoted("ra2ce")
+    cwl_config["service_directory"]["path"] = quoted(WORFKFLOW_DIR / "oscar_services")
+    cwl_config.update(kwargs)
+
+    print(f"Write Config file {config_fn} to folder {config_fn.parent}")
     with open(config_fn, "w+") as f:
         yaml.dump(cwl_config, f, default_flow_style=False, sort_keys=True)
 
@@ -181,9 +280,82 @@ def run_fa_scenario_workflow(
     )
 
     if debug:
-        cmd_run = f"cwltool --outdir {str(database.base_path)} --cachedir {database.base_path.joinpath('cachedir').as_posix()} {str(workflow_fn)} {str(config_fn)} | tee {str(logfile)}"
+        cmd = [
+            "cwltool",
+            "--outdir",
+            database.base_path.as_posix(),
+            "--cachedir",
+            database.base_path.joinpath("cachedir").as_posix(),
+            workflow_fn.as_posix(),
+            config_fn.as_posix(),
+        ]
     else:
-        cmd_run = f"cwltool --outdir {str(database.base_path)} {str(workflow_fn)} {str(config_fn)} | tee {str(logfile)}"
+        cmd = [
+            "cwltool",
+            "--outdir",
+            database.base_path.as_posix(),
+            workflow_fn.as_posix(),
+            config_fn.as_posix(),
+        ]
+
     print("Executing workflow")
-    print(f"Running {cmd_run}")
-    subprocess.run(cmd_run, shell=True)
+    print(f"Running {cmd}")
+    with open(logfile, "w") as log:
+        ps = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        while ps.poll() is None:
+            line = ps.stdout.readline()
+            print(line.strip().decode())
+            log.write(line.decode())
+
+
+def run_setup_database_workflow(
+    database_path: Union[str, os.PathLike],
+    debug=False,
+):
+    """Execute database setup workflow.
+
+    Parameters
+    ----------
+    database_path : Union[str, os.PathLike]
+        Location of to-be-created workflow
+    debug : bool, optional
+        Toggle caching workflow steps for debugging, by default False
+    """
+    workflow_fn = WORFKFLOW_DIR / "setup_fa_database.cwl"
+    config_fn = database_path.parent / "cwl_config_setup_database.yml"
+
+    cmd_validate = f'cwltool --validate "{str(workflow_fn)}" "{str(config_fn)}"'
+    print("Validating workflow")
+    print(f"Running {cmd_validate}")
+    result = subprocess.run(cmd_validate, shell=True)
+    assert result.returncode == 0, "CWL Validation Error, exit workflow execution"
+
+    logfile = database_path.parent / "setup_database.log"
+
+    if debug:
+        cmd = [
+            "cwltool",
+            "--outdir",
+            database_path.parent.as_posix(),
+            "--cachedir",
+            (database_path.parent / "cachedir").as_posix(),
+            workflow_fn.as_posix(),
+            config_fn.as_posix(),
+        ]
+    else:
+        cmd = [
+            "cwltool",
+            "--outdir",
+            database_path.parent.as_posix(),
+            workflow_fn.as_posix(),
+            config_fn.as_posix(),
+        ]
+
+    print("Executing workflow")
+    print(f"Running {cmd}")
+    with open(logfile, "w") as log:
+        ps = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        while ps.poll() is None:
+            line = ps.stdout.readline()
+            print(line.strip().decode())
+            log.write(line.decode())

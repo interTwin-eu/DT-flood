@@ -23,7 +23,12 @@ logger = setuplog("update_wflow", log_level=10)
 # Unpack args
 scenario_name = args.scenario
 database_root = Path(args.input).parent
-warmup_dir = Path(args.warmup_dir) / "model"
+# If offload to interlink is used an extra tmp dir is used
+contents_dir = list(Path(args.warmup_dir).glob("*"))
+if any(["tmp" in file.name for file in contents_dir]):
+    warmup_dir = Path(args.warmup_dir) / "tmp" / "model"
+else:
+    warmup_dir = Path(args.warmup_dir) / "model"
 warmup_states = warmup_dir / "run_default" / "outstate" / "outstates.nc"
 
 # unpack FA database, scenario, event description

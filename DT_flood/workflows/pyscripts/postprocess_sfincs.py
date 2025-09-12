@@ -23,7 +23,11 @@ logger = setuplog("update_sfincs", log_level=10)
 # Unpack args
 scenario_name = args.scenario
 database_root = Path(args.input).parent
-sf_root = Path(args.sfincsdir) / "data"
+contents_dir = list(Path(args.sfincsdir).glob("*"))
+if any(["tmp" in file.name for file in contents_dir]):
+    sf_root = Path(args.sfincsdir) / "tmp" / "data"
+else:
+    sf_root = Path(args.sfincsdir) / "data"
 
 # Fetch FA database, misc
 database, scenario = init_scenario(database_root, scenario_name)

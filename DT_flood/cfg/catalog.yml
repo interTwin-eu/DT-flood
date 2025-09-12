@@ -1,0 +1,26 @@
+meta:
+  root: .
+hydrography:
+  data_type: RasterDataset
+  path: data/hydrography/{variable}.tif
+  driver: raster
+  filesystem: local
+  meta:
+    category: topography
+    paper_doi: 10.1029/2019WR024873
+    paper_ref: Yamazaki et al. (2019)
+    source_license: CC-BY-NC 4.0 or ODbL 1.0
+    source_url: http://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_Hydro
+    source_version: 1.0
+  crs: 4326
+hydrography_index:
+  data_type: GeoDataFrame
+  path: data/hydrography_index.gpkg
+  driver: vector
+  filesystem: local
+  meta:
+    category: topography
+    paper_doi: 10.5194/hess-25-5287-2021
+    paper_ref: Eilander et al. (2021)
+    source_license: CC-BY-NC 4.0
+  crs: 4326

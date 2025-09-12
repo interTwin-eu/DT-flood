@@ -19,13 +19,32 @@ args = parser.parse_args()
 
 output = Path(args.output)
 scenario = args.scenario
-sfincsdir = Path(args.sfincsdir) / "data"
-wflowwarmup = Path(args.wflowwarmup) / "model"
-wflowevent = Path(args.wflowevent) / "model"
 fiatdir = Path(args.fiatdir)
 ra2cedir = Path(args.ra2cedir) / "data"
 floodmap = Path(args.floodmap)
 waterlevels = Path(args.waterlevels)
+
+# Check per service if interlink offloading was used
+sf_contents = list(Path(args.sfincsdir).glob("*"))
+if any(["tmp" in file.name for file in sf_contents]):
+    sfincsdir = Path(args.sfincsdir) / "tmp" / "data"
+else:
+    sfincsdir = Path(args.sfincsdir) / "data"
+
+wf_contents = list(Path(args.wflowwarmup).glob("*"))
+if any(["tmp" in file.name for file in wf_contents]):
+    wflowwarmup = Path(args.wflowwarmup) / "tmp" / "model"
+    wflowevent = Path(args.wflowevent) / "tmp" / "model"
+else:
+    wflowwarmup = Path(args.wflowwarmup) / "model"
+    wflowevent = Path(args.wflowevent) / "model"
+
+ra2ce_contents = list(Path(args.ra2cedir).glob("*"))
+if any(["tmp" in file.name for file in ra2ce_contents]):
+    ra2cedir = Path(args.ra2cedir) / "tmp" / "data"
+else:
+    ra2cedir = Path(args.ra2cedir) / "data"
+
 
 scenario_out_dir = output / "scenarios" / scenario
 flooding_dir = scenario_out_dir / "Flooding"
@@ -55,6 +74,9 @@ print(f"Copying waterlevels from {waterlevels} to {flooding_dir}")
 copy(waterlevels, flooding_dir / waterlevels.name)
 
 print(f"Copying RA2CE dir from {ra2cedir} to {impact_dir}")
+# Remove run_ra2ce script
+if (ra2cedir / "run_ra2ce.py").exists():
+    (ra2cedir / "run_ra2ce.py").unlink()
 copytree(ra2cedir, impact_dir / "ra2ce", dirs_exist_ok=True)
 
 print("Cleanup")

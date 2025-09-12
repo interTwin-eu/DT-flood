@@ -1,0 +1,18 @@
+name = ""
+database_path = ""
+fiat = ""
+unit_system = "metric"
+
+[sfincs_overland]
+name = ""
+reference = "MSL"
+
+[building_footprints]
+file = ""
+field_name = "object_id"
+
+[gui]
+max_flood_depth = 5
+max_aggr_dmg = 10000000
+max_footprint_dmg = 250000
+max_benefits = 50000000

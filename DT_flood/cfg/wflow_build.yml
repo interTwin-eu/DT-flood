@@ -1,0 +1,78 @@
+setup_basemaps:
+  hydrography_fn: data/hydrography.nc
+  basin_index_fn: hydrography_index.gpkg
+  upscale_method: ihu
+  res: <res>
+  region:
+    subbasin: <region>
+    uparea: 10
+    outlets: True
+
+setup_rivers:
+  hydrography_fn: data/hydrography.nc
+  river_geom_fn: data/rivers.gpkg
+  river_upa: 10
+  rivdph_method: powlaw
+  min_rivdph: 1
+  min_rivwth: 30
+  # slope_len: 2000
+  # smooth_len: 5000
+  # river_routing: local-inertial
+
+# setup_floodplains:
+#   hydrography_fn: data/hydrography.nc
+#   floodplain_type: 1d
+#   flood_depths: [0.5, 1,0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0]
+
+setup_reservoirs:
+  reservoirs_fn: data/reservoirs.gpkg
+  timeseries_fn: gww
+  min_area: 1.0
+
+setup_lakes:
+  lakes_fn: data/lakes.gpkg
+  min_area: 10.0
+
+setup_lulcmaps:
+  lulc_fn: data/lulc.nc
+  lulc_mapping_fn: globcover_mapping_default
+
+setup_laimaps:
+  lai_fn: data/lai.nc
+
+setup_soilmaps:
+  soil_fn: data/soilmaps.nc
+  ptf_ksatver: brakensiek
+
+setup_outlets:
+  river_only: True
+
+setup_gauges:
+  gauges_fn: <gauges>
+  snap_to_river: True
+  snap_uparea: True
+  derive_subcatch: False
+  index_col: index
+
+setup_config_output_timeseries:
+  mapname: wflow_gauges_src
+  toml_output: netcdf
+  header: ["Q_src"]
+  param: ["lateral.river.q_av"]
+
+setup_constant_pars:
+  KsatHorFrac: 100
+  Cfmax: 3.75653
+  cf_soil: 0.038
+  EoverR: 0.11
+  InfiltCapPath: 5
+  InfiltCapSoil: 600
+  MaxLeakage: 0
+  rootdistpar: -500
+  TT: 0
+  TTI: 2
+  TTM: 0
+  WHC: 0.1
+  G_Cfmax: 5.3
+  G_SIfrac: 0.002
+  G_TT: 1.3
