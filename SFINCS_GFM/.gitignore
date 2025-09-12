@@ -1,0 +1,6 @@
+examples/baltic/*
+!examples/baltic/*.ipynb
+!examples/baltic/*.md
+!examples/baltic/download_data.py
+
+sandbox
