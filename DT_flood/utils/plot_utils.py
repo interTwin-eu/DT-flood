@@ -10,8 +10,10 @@ from ipyleaflet import (
     GeomanDrawControl,
     LayersControl,
     LegendControl,
+    SplitMapControl,
     WidgetControl,
 )
+from IPython.display import HTML, display
 from ipywidgets import Button, Image, Layout, ToggleButtons
 
 from DT_flood.utils.plotting.fiat import add_fiat_impact, list_agg_areas
@@ -243,6 +245,50 @@ def draw_scenario_wflow(database, scenario):
     toggle.observe(redraw_func, "value")
 
     return map
+
+
+def compare_scenarios(database, scenario1, scenario2, agg_layer):
+    """Compare floodmaps of two scenarios."""
+    bounds = database.get_model_boundary().dissolve().to_crs(4326).total_bounds
+    bounds = [[bounds[1], bounds[0]], [bounds[3], bounds[2]]]
+
+    map1, _ = create_base_map()
+    map1.fit_bounds(bounds)
+
+    map1 = add_floodmap(map1, database, scenario1)
+    floodmap1 = get_layer_by_name(map1, "Floodmap")
+    # map1 = add_fiat_impact(map1, database, scenario1, agg_layer)
+    # impact1 = get_layer_by_name(map1, "Impact_Damage")
+
+    map2, _ = create_base_map()
+    map2.fit_bounds(bounds)
+    map2 = add_floodmap(map2, database, scenario2)
+    floodmap2 = get_layer_by_name(map2, "Floodmap")
+    # map2 = add_fiat_impact(map2, database, scenario2, agg_layer)
+    # impact2 = get_layer_by_name(map2, "Impact_Damage")
+
+    map_new, _ = create_base_map()
+    map_new.fit_bounds(bounds)
+
+    control = SplitMapControl(left_layer=[floodmap1], right_layer=[floodmap2])
+
+    map_new.add(control)
+    del map1, map2
+
+    return map_new
+
+
+def display_metrics(database, scenario):
+    """Display the metrics for a scenario."""
+    database = database.database
+    metric_fn = (
+        database.scenarios.output_path.joinpath(scenario) / f"{scenario}_metrics.html"
+    )
+
+    with open(metric_fn, "r", encoding="utf-8") as f:
+        html_str = f.read()
+
+    display(HTML(html_str))
 
 
 def add_floodmap(map, database, scenario):
